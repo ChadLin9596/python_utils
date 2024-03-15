@@ -6,3 +6,7 @@ matplotlib
 
 # data repository
 dill
+
+# deep learning
+torch 
+torchvision
