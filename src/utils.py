@@ -1,7 +1,16 @@
 import os
 import sys
+import requests
 import datetime
 import numpy as np
+
+def is_connect_to_network(url="https://www.google.com", timeout=5):
+    try:
+        response = requests.get(url, timeout=timeout)
+        return response.status_code == 200
+
+    except requests.RequestException:
+        return False
 
 def is_in_notebook():
     try:
