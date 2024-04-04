@@ -57,3 +57,30 @@ def center_crop_image(image, target_shapes):
         image = image[..., 0]
 
     return image
+
+def translate_image(img, tx, ty):
+    """
+    # modified from
+    # https://stackoverflow.com/questions/63367506/image-translation-using-numpy
+    """
+
+    M, N = img.shape[:2]
+
+    tx = max(min(tx, M), -M)
+    ty = max(min(ty, N), -N)
+
+    src_row_min = max(-tx, 0)
+    src_row_max = M - max(tx, 0)
+    src_col_min = max(-ty, 0)
+    src_col_max = N - max(ty, 0)
+
+    dst_row_min = max(tx, 0)
+    dst_row_max = M + min(tx, 0)
+    dst_col_min = max(ty, 0)
+    dst_col_max = N + min(ty, 0)
+
+    result = np.zeros_like(img)
+    result[dst_row_min:dst_row_max, dst_col_min:dst_col_max] = \
+        img[src_row_min:src_row_max, src_col_min:src_col_max]
+
+    return result
