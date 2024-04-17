@@ -32,6 +32,7 @@ class TestSeedEverything(unittest.TestCase):
         self.assertNotEqual(sample1, sample2)
 
 class SimpleModel(nn.Module):
+
     def __init__(self):
         super(SimpleModel, self).__init__()
         self.fc1 = nn.Linear(10, 20)
@@ -131,6 +132,7 @@ class TestGradRequiredLoadAndGet(unittest.TestCase):
             utils_torch.is_model_pair_exact(model_1.fc2, model_2.fc2))
 
 class TestSetGradRequiredLayerTrain(unittest.TestCase):
+
     def test_invalid_input(self):
         with self.assertRaises(ValueError):
             utils_torch.set_grad_required_layer_train("not a module")
@@ -159,6 +161,36 @@ class TestSetGradRequiredLayerTrain(unittest.TestCase):
         utils_torch.set_grad_required_layer_train(model)
         self.assertFalse(model.fc1.training)
         self.assertTrue(model.fc2.training)
+
+    def test_from_eval_to_train1(self):
+        model = SimpleModel()
+        model.eval()
+
+        utils_torch.set_grad_required_layer_train(model)
+
+        self.assertTrue(model.training)
+
+    def test_from_eval_to_train2(self):
+        model = SimpleModel()
+        utils_torch.freeze_model(model.fc1)
+        model.eval()
+
+        utils_torch.set_grad_required_layer_train(model)
+
+        self.assertTrue(model.training)
+        self.assertFalse(model.fc1.training)
+        self.assertTrue(model.fc2.training)
+
+    def test_from_eval_to_train3(self):
+        model = SimpleModel()
+        utils_torch.freeze_model(model)
+
+        model.eval()
+        utils_torch.set_grad_required_layer_train(model)
+
+        self.assertFalse(model.training)
+        self.assertFalse(model.fc1.training)
+        self.assertFalse(model.fc2.training)
 
 if __name__ == '__main__':
     unittest.main()

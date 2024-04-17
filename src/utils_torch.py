@@ -183,8 +183,11 @@ def set_grad_required_layer_train(model):
 
     check_module(model)
 
+    model.train()
+
     if is_all_frozen(model):
         model.eval()
+        return
 
     for module in model.children():
         module = set_grad_required_layer_train(module)
