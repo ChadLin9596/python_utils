@@ -1,17 +1,20 @@
-import io
 import gc
-import numpy as np
+import io
+
 import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image
+
 
 def fig_to_numpy(fig):
 
     buf = io.BytesIO()
-    fig.savefig(buf, format='png')
+    fig.savefig(buf, format="png")
     buf.seek(0)
 
     image = Image.open(buf)
     return np.array(image)
+
 
 def matplotlib_clear(fig):
     # https://stackoverflow.com/questions/31156578/
@@ -22,9 +25,10 @@ def matplotlib_clear(fig):
     # Clear the current figure.
     plt.clf()
     # Closes all the figure windows.
-    plt.close('all')
+    plt.close("all")
     plt.close(fig)
     gc.collect()
+
 
 def pixels_to_inches(pixels, ppi=91.79):
     """
@@ -47,4 +51,4 @@ def pixels_to_inches(pixels, ppi=91.79):
     if ppi < 0:
         raise ValueError
 
-    return [1. * pixel / ppi for pixel in pixels]
+    return [1.0 * pixel / ppi for pixel in pixels]

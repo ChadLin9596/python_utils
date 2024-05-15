@@ -1,12 +1,15 @@
 import os
 import sys
+
 os.chdir(os.path.split(os.path.realpath(__file__))[0])
-sys.path.append('..')
+sys.path.append("..")
 
 import unittest
+
 import numpy as np
 
 import utils_segmentation
+
 
 class TestSegmentedOperations(unittest.TestCase):
 
@@ -17,7 +20,8 @@ class TestSegmentedOperations(unittest.TestCase):
         expected = np.array([6, 9])  # 1+2+3 and 4+5
 
         np.testing.assert_array_equal(
-            utils_segmentation.segmented_sum(x, s_ind, e_ind), expected)
+            utils_segmentation.segmented_sum(x, s_ind, e_ind), expected
+        )
 
     def test_segmented_count(self):
         x = np.array([1, 2, 3, 4, 5])
@@ -28,7 +32,8 @@ class TestSegmentedOperations(unittest.TestCase):
         expected = np.array([3, 2])
 
         np.testing.assert_array_equal(
-            utils_segmentation.segmented_count(x, s_ind, e_ind), expected)
+            utils_segmentation.segmented_count(x, s_ind, e_ind), expected
+        )
 
     def test_segmented_mean(self):
         x = np.array([1, 2, 3, 4, 5])
@@ -39,7 +44,8 @@ class TestSegmentedOperations(unittest.TestCase):
         expected = np.array([2, 4.5])
 
         np.testing.assert_array_equal(
-            utils_segmentation.segmented_mean(x, s_ind, e_ind), expected)
+            utils_segmentation.segmented_mean(x, s_ind, e_ind), expected
+        )
 
     def test_error_conditions(self):
         x = np.array([1, 2, 3])
@@ -55,5 +61,6 @@ class TestSegmentedOperations(unittest.TestCase):
         with self.assertRaises(ValueError):
             utils_segmentation.segmented_mean(x, s_ind, e_ind)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

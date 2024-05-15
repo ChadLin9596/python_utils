@@ -1,12 +1,21 @@
-lzf
+# general
+matplotlib
+notebook
 numpy
 pandas
 Pillow
-matplotlib
+requests
+
+# maintenance
+black
+isort
+
+# compression and decompression for pcd.py
+lzf
 
 # data repository
 dill
 
 # deep learning
-torch 
+torch
 torchvision

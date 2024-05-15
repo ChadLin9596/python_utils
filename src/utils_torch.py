@@ -1,28 +1,31 @@
-import os
-import math
-import torch
-import random
 import collections
+import math
+import os
+import random
+
 import numpy as np
+import torch
 import torch.nn as nn
 import torch.optim as optim
+
 
 def check_module(x):
 
     if isinstance(x, nn.Module):
         return
 
-    raise ValueError('Only accept nn.Module input.')
+    raise ValueError("Only accept nn.Module input.")
+
 
 def seed_everything(seed=42, verbose=False):
     """
-        Set the `seed` value for torch and numpy seeds. Also turns on
-        deterministic execution for cudnn.
+    Set the `seed` value for torch and numpy seeds. Also turns on
+    deterministic execution for cudnn.
 
-        Parameters:
-        - seed:     A hashable seed value
+    Parameters:
+    - seed:     A hashable seed value
 
-        copied from AnyLoc(https://github.com/AnyLoc/AnyLoc)
+    copied from AnyLoc(https://github.com/AnyLoc/AnyLoc)
     """
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -33,6 +36,7 @@ def seed_everything(seed=42, verbose=False):
 
     if verbose:
         print(f"Seed set to: {seed} (type: {type(seed)})")
+
 
 def is_model_pair_exact(model_1, model_2, verbose=False):
     """
@@ -45,38 +49,42 @@ def is_model_pair_exact(model_1, model_2, verbose=False):
         if verbose:
             print(s)
 
-    prefix = 'perform check on '
+    prefix = "perform check on "
 
     exact = True
     for (name_1, tensor_1), (name_2, tensor_2) in zip(
-        model_1.state_dict().items(), model_2.state_dict().items()):
+        model_1.state_dict().items(), model_2.state_dict().items()
+    ):
 
         if not exact and not verbose:
             break
 
-        xprint(prefix + f'src -> {name_1}')
-        xprint(' ' * len(prefix) + f'dst -> {name_2}')
+        xprint(prefix + f"src -> {name_1}")
+        xprint(" " * len(prefix) + f"dst -> {name_2}")
 
         r = torch.equal(tensor_1, tensor_2)
         exact &= r
 
         if r:
-            xprint(' ' * len(prefix) + 'pass !')
+            xprint(" " * len(prefix) + "pass !")
         else:
-            xprint(' ' * len(prefix) + 'fail !')
+            xprint(" " * len(prefix) + "fail !")
 
     return exact
+
 
 def get_model_device(model):
 
     check_module(model)
     return next(model.parameters()).device
 
+
 def freeze_model(model):
 
     check_module(model)
     for param in model.parameters():
         param.requires_grad = False
+
 
 def is_all_frozen(model):
 
@@ -88,6 +96,7 @@ def is_all_frozen(model):
         return False
     return True
 
+
 def is_any_frozen(model):
 
     check_module(model)
@@ -96,6 +105,7 @@ def is_any_frozen(model):
             continue
         return True
     return False
+
 
 def get_grad_required_state(model):
     """
@@ -121,11 +131,12 @@ def get_grad_required_state(model):
 
         # dive into deeper (prefix naming is referred from torch source code)
         for name, module in x._modules.items():
-            dfs(module, prefix + name + '.')
+            dfs(module, prefix + name + ".")
 
-    dfs(model, '')
+    dfs(model, "")
 
     return state
+
 
 def load_grad_required_state(model, state, verbose=True, return_details=False):
     """
@@ -162,19 +173,20 @@ def load_grad_required_state(model, state, verbose=True, return_details=False):
 
         # dive into deeper (prefix naming is referred from torch source code)
         for name, module in x._modules.items():
-            dfs(module, prefix + name + '.')
+            dfs(module, prefix + name + ".")
 
-    dfs(model, '')
+    dfs(model, "")
 
     if len(state) > 0:
         for name in state.keys():
-            xprint('<%s do not match in model>' % name)
+            xprint("<%s do not match in model>" % name)
     else:
-        xprint('<All keys matched successfully>')
+        xprint("<All keys matched successfully>")
 
     if return_details:
         return model, state
     return model
+
 
 def set_grad_required_layer_train(model):
     """
@@ -192,14 +204,22 @@ def set_grad_required_layer_train(model):
     for module in model.children():
         module = set_grad_required_layer_train(module)
 
+
 class CustomizedLRScheduler(optim.lr_scheduler._LRScheduler):
     """
     TODO: docstring
     """
 
-    def __init__(self, optimizer, last_epoch=-1,
-                 start_scale=0.0, warmup_epoch=-1,
-                 final_scale=0.0, total_epoch=-1, mode=None):
+    def __init__(
+        self,
+        optimizer,
+        last_epoch=-1,
+        start_scale=0.0,
+        warmup_epoch=-1,
+        final_scale=0.0,
+        total_epoch=-1,
+        mode=None,
+    ):
 
         if last_epoch > total_epoch:
             raise ValueError
@@ -218,12 +238,13 @@ class CustomizedLRScheduler(optim.lr_scheduler._LRScheduler):
         # implicitly do a series operation: steps() -> get_lr()
         # That is the reason why it need to put at the end to ensure
         # initialization is done.
-        super(CustomizedLRScheduler, self).__init__(optimizer,
-                                            last_epoch=last_epoch)
+        super(CustomizedLRScheduler, self).__init__(
+            optimizer, last_epoch=last_epoch
+        )
 
     @staticmethod
     def _check_mode(mode):
-        if mode in ['cosine', 'linear', 'exp', None]:
+        if mode in ["cosine", "linear", "exp", None]:
             return
         raise ValueError
 
@@ -235,27 +256,32 @@ class CustomizedLRScheduler(optim.lr_scheduler._LRScheduler):
         if self.mode is None:
             return 1
 
-        if self.mode == 'exp':
+        if self.mode == "exp":
             gamma = math.log(self.final_scale + 1e-7) / self.total_epoch
             ratio = math.exp(gamma * epoch)  # (1, final_scale)
             return ratio
 
-        if self.mode == 'linear':
+        if self.mode == "linear":
             return 1 - (1 - self.final_scale) / self.total_epoch * epoch
 
-        if self.mode == 'cosine':
+        if self.mode == "cosine":
+
+            # let `black` formatter ignore the following line
+            # fmt: off
             x = epoch / self.total_epoch * math.pi  # (0, pi)
             x = math.cos(x) + 1                     # (2, 0)
             x = x / 2 * (1 - self.final_scale)      # (1 - final_scale, 0)
             x = x + self.final_scale                # (1, final_scale)
-            return  x
+            # fmt: on
+
+            return x
 
     def get_lr(self):
 
         if self.last_epoch < self.warmup_epoch:
             # warmup process
             target_scale = self.get_scale(self.warmup_epoch)
-            ratio = 1. * self.last_epoch / self.warmup_epoch
+            ratio = 1.0 * self.last_epoch / self.warmup_epoch
             scale = (target_scale - self.start_scale) * ratio
             scale = self.start_scale + scale
         else:

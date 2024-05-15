@@ -1,12 +1,15 @@
 import os
 import sys
+
 os.chdir(os.path.split(os.path.realpath(__file__))[0])
-sys.path.append('..')
+sys.path.append("..")
 
 import unittest
+
 import numpy as np
 
 import utils_img
+
 
 class TestImageOverlay(unittest.TestCase):
 
@@ -52,5 +55,6 @@ class TestImageOverlay(unittest.TestCase):
         with self.assertRaises(ValueError):
             utils_img.overlay_image(img, layer, 0.5, mask)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

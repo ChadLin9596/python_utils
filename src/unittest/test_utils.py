@@ -1,9 +1,11 @@
 import os
 import sys
+
 os.chdir(os.path.split(os.path.realpath(__file__))[0])
-sys.path.append('..')
+sys.path.append("..")
 
 import unittest
+
 import numpy as np
 
 import utils
@@ -19,8 +21,7 @@ class TestCombineMeanVar(unittest.TestCase):
         var = np.var(np.hstack([A, B]))
 
         result = utils.combine_two_mean_var(
-            (10, np.mean(A), np.var(A)),
-            (20, np.mean(B), np.var(B))
+            (10, np.mean(A), np.var(A)), (20, np.mean(B), np.var(B))
         )
         expect = (30, mean, var)
 
@@ -64,9 +65,18 @@ class TestPointsInBoundingBox(unittest.TestCase):
 
     def test_points_inside_bounding_box(self):
 
-        bb_vertices = np.array([
-            [1, 1, 1], [1, 1, -1], [1, -1, -1], [1, -1, 1],
-            [-1, 1, 1], [-1, 1, -1], [-1, -1, -1], [-1, -1, 1]])
+        bb_vertices = np.array(
+            [
+                [1, 1, 1],
+                [1, 1, -1],
+                [1, -1, -1],
+                [1, -1, 1],
+                [-1, 1, 1],
+                [-1, 1, -1],
+                [-1, -1, -1],
+                [-1, -1, 1],
+            ]
+        )
 
         points = np.array([[0, 0, 0], [0.5, 0.5, 0.5]])
         expected = np.array([True, True])
@@ -76,9 +86,18 @@ class TestPointsInBoundingBox(unittest.TestCase):
         np.testing.assert_array_equal(result, expected)
 
     def test_points_outside_bounding_box(self):
-        bb_vertices = np.array([
-            [1, 1, 1], [1, 1, -1], [1, -1, -1], [1, -1, 1],
-            [-1, 1, 1], [-1, 1, -1], [-1, -1, -1], [-1, -1, 1]])
+        bb_vertices = np.array(
+            [
+                [1, 1, 1],
+                [1, 1, -1],
+                [1, -1, -1],
+                [1, -1, 1],
+                [-1, 1, 1],
+                [-1, 1, -1],
+                [-1, -1, -1],
+                [-1, -1, 1],
+            ]
+        )
 
         points = np.array([[2, 2, 2], [-2, -2, -2]])
         expected = np.array([False, False])
@@ -93,12 +112,14 @@ class TestStableUniqueMerge(unittest.TestCase):
     def test_multiple_lists_with_unique_elements(self):
         self.assertEqual(
             utils.stable_unique_merge([1, 2], [3, 4], [5, 6]),
-            [1, 2, 3, 4, 5, 6])
+            [1, 2, 3, 4, 5, 6],
+        )
 
     def test_lists_with_overlapping_elements(self):
         self.assertEqual(
             utils.stable_unique_merge([1, 2, 3], [3, 4, 5], [5, 6, 7]),
-            [1, 2, 3, 4, 5, 6, 7])
+            [1, 2, 3, 4, 5, 6, 7],
+        )
 
     def test_empty_list_input(self):
         self.assertEqual(utils.stable_unique_merge([], [], []), [])
@@ -108,8 +129,8 @@ class TestStableUniqueMerge(unittest.TestCase):
 
     def test_order_maintenance(self):
         self.assertEqual(
-            utils.stable_unique_merge([3, 2, 1], [2, 1, 4]),
-            [3, 2, 1, 4])
+            utils.stable_unique_merge([3, 2, 1], [2, 1, 4]), [3, 2, 1, 4]
+        )
 
 
 class TestMergeTwoArray(unittest.TestCase):
@@ -140,5 +161,5 @@ class TestMergeTwoArray(unittest.TestCase):
             utils.merge_two_array(arr1, arr2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

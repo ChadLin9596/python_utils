@@ -1,11 +1,13 @@
 import copy
+
 import numpy as np
 import pandas as pd
 
 import utils
 
+
 class Array:
-    _columns = ['index']
+    _columns = ["index"]
     _dtypes = [np.int64]
 
     def __init__(self, n):
@@ -15,12 +17,14 @@ class Array:
         return len(self._data)
 
     def __repr__(self):
-        return '<Array contains %d rows>' % len(self._data)
+        return "<Array contains %d rows>" % len(self._data)
 
     def __getitem__(self, key):
-        if not isinstance(key, slice) and \
-           not np.shape(key) == () and \
-           not (isinstance(key, np.ndarray) and key.dtype == np.bool_):
+        if (
+            not isinstance(key, slice)
+            and not np.shape(key) == ()
+            and not (isinstance(key, np.ndarray) and key.dtype == np.bool_)
+        ):
             key = np.unique(key)
 
         other = copy.copy(self)
@@ -32,9 +36,9 @@ class Array:
         return state
 
     def __setstate__(self, state):
-        n = len(state['index'])
+        n = len(state["index"])
         self._allocate(n)
-        self._data.index = state['index']
+        self._data.index = state["index"]
 
         for i in self._columns:
             self._data[i] = state[i]
@@ -42,31 +46,34 @@ class Array:
     def _allocate(self, n):
         dt = np.dtype(list(zip(self._columns, self._dtypes)))
         self._data = pd.DataFrame(np.empty(n, dtype=dt))
-        self._data['index'] = self._data.index
+        self._data["index"] = self._data.index
 
     @property
     def index(self):
-        return self._data['index'].to_numpy()
+        return self._data["index"].to_numpy()
 
     def loc(self, key):
-        if not isinstance(key, slice) and \
-           not np.shape(key) == () and \
-           not (isinstance(key, np.ndarray) and key.dtype == np.bool_):
+        if (
+            not isinstance(key, slice)
+            and not np.shape(key) == ()
+            and not (isinstance(key, np.ndarray) and key.dtype == np.bool_)
+        ):
             key = np.unique(key)
 
         other = copy.copy(self)
         other._data = self._data.loc[key]
         return other
 
+
 class Timestamps(Array):
-    _columns = Array._columns + ['timestamp']
+    _columns = Array._columns + ["timestamp"]
     _dtypes = Array._dtypes + [np.int64]
 
     def __init__(self, n):
         super().__init__(n)
 
     def __repr__(self):
-        return '<Timestamps contains %d rows>' % len(self._data)
+        return "<Timestamps contains %d rows>" % len(self._data)
 
     @property
     def datetime(self):
@@ -74,20 +81,22 @@ class Timestamps(Array):
 
     @property
     def timestamps(self):
-        return self._data['timestamp'].to_numpy()
+        return self._data["timestamp"].to_numpy()
 
     @timestamps.setter
     def timestamps(self, value):
-        self._data['timestamp'] = np.array(value, dtype=np.int64)
+        self._data["timestamp"] = np.array(value, dtype=np.int64)
+
 
 ##############
 # Trajectory #
 ##############
 
+
 class PoseSequence(Array):
 
-    _columns = ['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw']
-    _dtypes = [np.float64,] * len(_columns)
+    _columns = ["x", "y", "z", "qx", "qy", "qz", "qw"]
+    _dtypes = [np.float64] * len(_columns)
 
     _columns = Array._columns + _columns
     _dtypes = Array._dtypes + _dtypes
@@ -96,18 +105,18 @@ class PoseSequence(Array):
         super().__init__(n)
 
     def __repr__(self):
-        return '<PoseSequence contains %d rows>' % len(self._data)
+        return "<PoseSequence contains %d rows>" % len(self._data)
 
     def adjust(self, adjustment):
         raise NotImplementedError
 
     @property
     def xyz(self):
-        return self._data[['x', 'y', 'z']].to_numpy()
+        return self._data[["x", "y", "z"]].to_numpy()
 
     @property
     def quaternion(self):
-        return self._data[['qx', 'qy', 'qz', 'qw']].to_numpy()
+        return self._data[["qx", "qy", "qz", "qw"]].to_numpy()
 
     @property
     def R(self):
@@ -115,11 +124,12 @@ class PoseSequence(Array):
 
     @xyz.setter
     def xyz(self, value):
-        self._data[['x', 'y', 'z']] = value
+        self._data[["x", "y", "z"]] = value
 
     @quaternion.setter
     def quaternion(self, value):
-        self._data[['qx', 'qy', 'qz', 'qw']] = value
+        self._data[["qx", "qy", "qz", "qw"]] = value
+
 
 class TimePoseSequence(Timestamps, PoseSequence):
 
@@ -132,4 +142,4 @@ class TimePoseSequence(Timestamps, PoseSequence):
         super().__init__(n)
 
     def __repr__(self):
-        return '<TimePoseSequence contains %d rows>' % len(self._data)
+        return "<TimePoseSequence contains %d rows>" % len(self._data)

@@ -18,6 +18,16 @@ a few small tools that I greatly rely on in the following area:
     └── <tools>.py
 ```
 
+### Maintenance
+
+```bash
+$ cd <directory of this repository>
+$ python -m black . --line-length=79
+
+# sort all imports in alphabetical order
+$ python -m isort .
+```
+
 ### TODO:
 - [ ] add github workflow
 - [ ] Data Repo: functionality of attributes serialization

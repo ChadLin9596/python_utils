@@ -2,8 +2,10 @@ import numpy as np
 
 import utils
 
+
 def clamp_image(img):
-    return np.minimum(np.maximum(img, 0), 1.)
+    return np.minimum(np.maximum(img, 0), 1.0)
+
 
 def overlay_image(image, layer, ratio=0.5, mask=None):
 
@@ -13,14 +15,16 @@ def overlay_image(image, layer, ratio=0.5, mask=None):
 
     mask = np.array(mask).astype(bool)
 
-    if image.shape[:len(mask.shape)] != mask.shape:
+    if image.shape[: len(mask.shape)] != mask.shape:
         raise ValueError(
-            f'shape of image {image.shape} and '
-            f'mask {mask.shape} is not compatible')
+            f"shape of image {image.shape} and "
+            f"mask {mask.shape} is not compatible"
+        )
 
     output = image.copy()
     output[mask] = utils.merge_two_array(output, layer, ratio=ratio)[mask]
     return clamp_image(output)
+
 
 def center_crop_image(image, target_shapes):
     """
@@ -58,6 +62,7 @@ def center_crop_image(image, target_shapes):
 
     return image
 
+
 def translate_image(img, tx, ty):
     """
     # modified from
@@ -80,7 +85,7 @@ def translate_image(img, tx, ty):
     dst_col_max = N + min(ty, 0)
 
     result = np.zeros_like(img)
-    result[dst_row_min:dst_row_max, dst_col_min:dst_col_max] = \
-        img[src_row_min:src_row_max, src_col_min:src_col_max]
+    foo = img[src_row_min:src_row_max, src_col_min:src_col_max]
+    result[dst_row_min:dst_row_max, dst_col_min:dst_col_max] = foo
 
     return result

@@ -1,14 +1,17 @@
 import os
 import sys
-os.chdir(os.path.split(os.path.realpath(__file__))[0])
-sys.path.append('..')
 
-import torch
+os.chdir(os.path.split(os.path.realpath(__file__))[0])
+sys.path.append("..")
+
 import random
 import unittest
+
+import torch
 import torch.nn as nn
 
 import utils_torch
+
 
 class TestSeedEverything(unittest.TestCase):
 
@@ -31,6 +34,7 @@ class TestSeedEverything(unittest.TestCase):
 
         self.assertNotEqual(sample1, sample2)
 
+
 class SimpleModel(nn.Module):
 
     def __init__(self):
@@ -42,6 +46,7 @@ class SimpleModel(nn.Module):
         x = self.fc1(x)
         x = self.fc2(x)
         return x
+
 
 class TestModelExact(unittest.TestCase):
 
@@ -61,12 +66,14 @@ class TestModelExact(unittest.TestCase):
 
         self.assertFalse(utils_torch.is_model_pair_exact(model_1, model_2))
 
+
 class TestModelDevice(unittest.TestCase):
 
     def test_cpu(self):
         model = SimpleModel()
         device = utils_torch.get_model_device(model)
-        self.assertTrue(device == torch.device('cpu'))
+        self.assertTrue(device == torch.device("cpu"))
+
 
 class TestModelFreezing(unittest.TestCase):
 
@@ -81,6 +88,7 @@ class TestModelFreezing(unittest.TestCase):
 
         # Check if the model is fully frozen
         self.assertTrue(utils_torch.is_all_frozen(model))
+
 
 class TestGradRequiredLoadAndGet(unittest.TestCase):
 
@@ -105,10 +113,10 @@ class TestGradRequiredLoadAndGet(unittest.TestCase):
         state = utils_torch.get_grad_required_state(model)
 
         # Further checks can be added here based on expected state contents
-        self.assertTrue('fc1.weight' not in state)
-        self.assertTrue('fc1.bias' not in state)
-        self.assertTrue('fc2.weight' in state)
-        self.assertTrue('fc2.bias' in state)
+        self.assertTrue("fc1.weight" not in state)
+        self.assertTrue("fc1.bias" not in state)
+        self.assertTrue("fc2.weight" in state)
+        self.assertTrue("fc2.bias" in state)
 
     def test_load_grad_required_state(self):
 
@@ -118,18 +126,24 @@ class TestGradRequiredLoadAndGet(unittest.TestCase):
         model_2 = self.get_model()
 
         self.assertFalse(
-            utils_torch.is_model_pair_exact(model_1.fc1, model_2.fc1))
+            utils_torch.is_model_pair_exact(model_1.fc1, model_2.fc1)
+        )
         self.assertFalse(
-            utils_torch.is_model_pair_exact(model_1.fc2, model_2.fc2))
+            utils_torch.is_model_pair_exact(model_1.fc2, model_2.fc2)
+        )
 
         states = utils_torch.get_grad_required_state(model_1)
 
-        model_2 = utils_torch.load_grad_required_state(model_2, states,
-                                                       verbose=False)
+        model_2 = utils_torch.load_grad_required_state(
+            model_2, states, verbose=False
+        )
         self.assertFalse(
-            utils_torch.is_model_pair_exact(model_1.fc1, model_2.fc1))
+            utils_torch.is_model_pair_exact(model_1.fc1, model_2.fc1)
+        )
         self.assertTrue(
-            utils_torch.is_model_pair_exact(model_1.fc2, model_2.fc2))
+            utils_torch.is_model_pair_exact(model_1.fc2, model_2.fc2)
+        )
+
 
 class TestSetGradRequiredLayerTrain(unittest.TestCase):
 
@@ -192,5 +206,6 @@ class TestSetGradRequiredLayerTrain(unittest.TestCase):
         self.assertFalse(model.fc1.training)
         self.assertFalse(model.fc2.training)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
