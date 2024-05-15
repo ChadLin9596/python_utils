@@ -1,6 +1,6 @@
 import numpy as np
 
-import utils
+from . import utils
 
 
 def clamp_image(img):
