@@ -90,6 +90,28 @@ class TestModelFreezing(unittest.TestCase):
         self.assertTrue(utils_torch.is_all_frozen(model))
 
 
+class TestModelUnFreezing(unittest.TestCase):
+
+    def test_unfreeze_model(self):
+
+        model = SimpleModel()
+
+        # Ensure the model is initially unfrozen
+        self.assertFalse(utils_torch.is_all_frozen(model))
+
+        # Freeze the model
+        utils_torch.freeze_model(model)
+
+        # Check if the model is fully frozen
+        self.assertTrue(utils_torch.is_all_frozen(model))
+
+        utils_torch.unfreeze_model(model)
+
+        # Check if the model is fully unfrozen
+        self.assertFalse(utils_torch.is_all_frozen(model))
+        self.assertFalse(utils_torch.is_any_frozen(model))
+
+
 class TestGradRequiredLoadAndGet(unittest.TestCase):
 
     @staticmethod
