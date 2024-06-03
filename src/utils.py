@@ -24,6 +24,12 @@ def is_in_notebook():
         return False
 
 
+def get_utc_time(format="%Y-%m-%d.%H-%M-%S"):
+    utctime = datetime.datetime.now(datetime.timezone.utc)
+    utctime = utctime.strftime(format)
+    return utctime
+
+
 def mkdir(path):
     if os.path.exists(path):
         return
@@ -112,12 +118,12 @@ class ProgressTimer:
     def tic(self, total_items):
         self.items = 0
         self.total_items = total_items
-        self.start_time = datetime.datetime.utcnow()
-        self.end_time = datetime.datetime.utcnow()
+        self.start_time = datetime.datetime.now(datetime.timezone.utc)
+        self.end_time = datetime.datetime.now(datetime.timezone.utc)
         self._progress_bar(first_call=True)
 
     def toc(self, add=1):
-        self.end_time = datetime.datetime.utcnow()
+        self.end_time = datetime.datetime.now(datetime.timezone.utc)
         self.items += add
         self._progress_bar(first_call=False)
 
