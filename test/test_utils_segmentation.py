@@ -1,14 +1,8 @@
-import os
-import sys
-
-os.chdir(os.path.split(os.path.realpath(__file__))[0])
-sys.path.append("..")
-
 import unittest
 
 import numpy as np
 
-import utils_segmentation
+import src.utils_segmentation as utils_segmentation
 
 
 class TestSegmentedOperations(unittest.TestCase):

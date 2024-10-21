@@ -1,12 +1,7 @@
 import os
-import sys
-
-os.chdir(os.path.split(os.path.realpath(__file__))[0])
-sys.path.append("..")
-
 import unittest
 
-import pcd
+import src.pcd as pcd
 
 
 class TestPCD(unittest.TestCase):
@@ -24,8 +19,11 @@ class TestPCD(unittest.TestCase):
         "DATA",
     ]
 
+    _path = os.path.dirname(os.path.realpath(__file__))
+    _path = os.path.join(_path, "example.pcd")
+
     def test_read(self):
-        foo = pcd.read("example.pcd")
+        foo = pcd.read(self._path)
 
         self.assertTrue(foo.shape == (213,))
         self.assertTrue(foo.dtype.names == ("x", "y", "z", "rgb"))
@@ -33,7 +31,7 @@ class TestPCD(unittest.TestCase):
 
     def test_read_header(self):
 
-        _, header = pcd.read("example.pcd", return_header=True)
+        _, header = pcd.read(self._path, return_header=True)
 
         for entry in self.valid_entries:
             self.assertTrue(entry in header)

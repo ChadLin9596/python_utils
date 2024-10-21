@@ -1,14 +1,8 @@
-import os
-import sys
-
-os.chdir(os.path.split(os.path.realpath(__file__))[0])
-sys.path.append("..")
-
 import unittest
 
 import numpy as np
 
-import utils_img
+import src.utils_img as utils_img
 
 
 class TestImageOverlay(unittest.TestCase):

@@ -21,14 +21,6 @@ _header = [
 ]
 
 
-def parse_rgb32(x):
-    if not isinstance(x, np.ndarray) or x.dtype != np.float32:
-        raise ValueError("x must be a float32 numpy array.")
-
-    R = np.ndarray((len(x), 4), buffer=x.tobytes(), dtype=np.uint8)
-    return R
-
-
 def parse_header(fd):
     H = {}
 
@@ -146,17 +138,62 @@ def read(f, return_header=False):
     return B
 
 
-def write_ascii_data(x):
-    raise NotImplementedError
+def _write_header(fd, H):
+    # currently only support binary
 
-
-def write_binary_data(x):
-    raise NotImplementedError
-
-
-def write_binary_compressed_data(x):
-    raise NotImplementedError
+    fd.write(b"# .PCD v.7 - Point Cloud Data file format\n")
+    fd.write(b"VERSION .7\n")
+    fd.write(b"FIELDS %s\n" % b" ".join(H["FIELDS"]))
+    fd.write(b"SIZE %s\n" % b" ".join(H["SIZE"]))
+    fd.write(b"TYPE %s\n" % b" ".join(H["TYPE"]))
+    fd.write(b"COUNT %s\n" % b" ".join(H["COUNT"]))
+    fd.write(b"WIDTH %d\n" % H["WIDTH"])
+    fd.write(b"HEIGHT %d\n" % H["HEIGHT"])
+    fd.write(b"VIEWPOINT 0 0 0 1 0 0 0\n")
+    fd.write(b"POINTS %d\n" % H["POINTS"])
+    fd.write(b"DATA binary\n")
 
 
 def write(f, x):
-    raise NotImplementedError
+
+    if not isinstance(x, np.ndarray):
+        raise TypeError("x should be a numpy array.")
+
+    if len(x.shape) > 2:
+        raise ValueError("x should be 1D or 2D.")
+
+    header = {
+        "FIELDS": [],
+        "SIZE": [],
+        "TYPE": [],
+        "COUNT": [],
+        "WIDTH": 0,
+        "HEIGHT": 0,
+        "POINTS": 0,
+    }
+
+    for descr in x.dtype.descr:
+
+        dtype = np.dtype(descr[1])
+        header["FIELDS"].append(descr[0].encode("UTF-8"))
+        header["SIZE"].append(str(dtype.itemsize).encode("UTF-8"))
+        header["TYPE"].append(dtype.kind.upper().encode("UTF-8"))
+
+        cnt = 1
+        if len(descr) == 3:
+            cnt = np.prod(descr[2])
+
+        header["COUNT"].append(str(cnt).encode("UTF-8"))
+
+    if len(x.shape) == 1:
+        header["WIDTH"] = x.shape[0]
+        header["HEIGHT"] = 1
+        header["POINTS"] = x.shape[0]
+    else:
+        header["WIDTH"] = x.shape[1]
+        header["HEIGHT"] = x.shape[0]
+        header["POINTS"] = x.shape[0] * x.shape[1]
+
+    with open(f, "wb") as fd:
+        _write_header(fd, header)
+        fd.write(x.tobytes())

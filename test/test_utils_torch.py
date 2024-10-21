@@ -1,16 +1,10 @@
-import os
-import sys
-
-os.chdir(os.path.split(os.path.realpath(__file__))[0])
-sys.path.append("..")
-
 import random
 import unittest
 
 import torch
 import torch.nn as nn
 
-import utils_torch
+import src.utils_torch as utils_torch
 
 
 class TestSeedEverything(unittest.TestCase):
