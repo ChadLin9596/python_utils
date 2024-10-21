@@ -20,12 +20,14 @@ class Array:
         return "<Array contains %d rows>" % len(self._data)
 
     def __getitem__(self, key):
+
+        # fmt: off
         if (
             not isinstance(key, slice)
-            and not np.shape(key) == ()
             and not (isinstance(key, np.ndarray) and key.dtype == np.bool_)
         ):
             key = np.unique(key)
+        # fmt: on
 
         other = copy.copy(self)
         other._data = self._data.iloc[key]
@@ -51,18 +53,6 @@ class Array:
     @property
     def index(self):
         return self._data["index"].to_numpy()
-
-    def loc(self, key):
-        if (
-            not isinstance(key, slice)
-            and not np.shape(key) == ()
-            and not (isinstance(key, np.ndarray) and key.dtype == np.bool_)
-        ):
-            key = np.unique(key)
-
-        other = copy.copy(self)
-        other._data = self._data.loc[key]
-        return other
 
 
 class Timestamps(Array):

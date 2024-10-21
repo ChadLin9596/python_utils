@@ -36,6 +36,21 @@ class TestPCD(unittest.TestCase):
         for entry in self.valid_entries:
             self.assertTrue(entry in header)
 
+    def test_write(self):
+
+        foo = pcd.read(self._path)
+
+        output_path = self._path.replace("example.pcd", "output.pcd")
+        pcd.write(output_path, foo)
+
+        bar = pcd.read(output_path)
+
+        self.assertTrue(foo.shape == bar.shape)
+        self.assertTrue(foo.dtype.names == bar.dtype.names)
+        self.assertTrue(foo.dtype.itemsize == bar.dtype.itemsize)
+
+        os.remove(output_path)
+
 
 if __name__ == "__main__":
     unittest.main()
