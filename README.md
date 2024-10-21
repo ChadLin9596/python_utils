@@ -8,14 +8,26 @@ a few small tools that I greatly rely on in the following area:
 ### file structure
 
 ```
+├── examples
+│   └── demo_<tools>.ipynb
+│
+├── src
+│   └── <tools>.py
+│
+├── test
+│   └── test_<tools>>.py
+│
+├── __init__.py
+├── LICENSE
 ├── README.md
-├── requirements.txt
-└── src
-    ├── examples
-    │   └── demo_<tools>.ipynb
-    ├── unittest
-    │   └──  test_<tools>.py
-    └── <tools>.py
+└── requirements.txt
+```
+
+### Unittest
+
+```bash
+$ cd <directory of this repository>
+$ python -m unittest
 ```
 
 ### Maintenance
@@ -32,4 +44,4 @@ $ python -m isort .
 - [ ] add github workflow
 - [ ] Data Repo: functionality of attributes serialization
 - [ ] Data Repo: implement tools to manage data repo tree
-- [ ] PCD: Implement pcd writer
+- [x] PCD: Implement pcd writer
