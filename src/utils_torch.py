@@ -92,6 +92,7 @@ def unfreeze_model(model):
     for param in model.parameters():
         param.requires_grad = True
 
+
 def is_all_frozen(model):
 
     check_module(model)

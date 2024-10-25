@@ -291,3 +291,22 @@ def merge_two_array(array_1, array_2, ratio=0.5):
     array_2 = np.broadcast_to(array_2, target_shp)
 
     return array_1 * ratio + array_2 * (1 - ratio)
+
+
+def randomize_labels(labels):
+    """
+    Randomize the order of the labels.
+
+    Parameters:
+    - labels: A numpy array of labels.
+
+    Returns:
+    - A numpy array of randomized labels.
+    """
+
+    labels = np.array(labels)
+    unique_labels = np.unique(labels)
+    np.random.shuffle(unique_labels)
+
+    label_map = {l: n for n, l in enumerate(unique_labels)}
+    return np.array([label_map[i] for i in labels])
