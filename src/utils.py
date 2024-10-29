@@ -153,6 +153,34 @@ def Q_to_R(q):
     return R
 
 
+def euler_to_R(euler):
+
+    if np.shape(euler)[-1] != 3:
+        raise ValueError("shape of euler must be (..., 3)")
+
+    roll, pitch, yaw = euler[..., 0], euler[..., 1], euler[..., 2]
+
+    cr = np.cos(roll)
+    sr = np.sin(roll)
+    cp = np.cos(pitch)
+    sp = np.sin(pitch)
+    cy = np.cos(yaw)
+    sy = np.sin(yaw)
+
+    # https://en.wikipedia.org/wiki/Rotation_matrix -> General 3D rotations
+    R = np.empty(np.shape(euler)[:-1] + (3, 3))
+    R[..., 0, 0] = cp * cy
+    R[..., 0, 1] = cp * sy
+    R[..., 0, 2] = -sp
+    R[..., 1, 0] = sr * sp * cy - cr * sy
+    R[..., 1, 1] = sr * sp * sy + cr * cy
+    R[..., 1, 2] = sr * cp
+    R[..., 2, 0] = cr * sp * cy + sr * sy
+    R[..., 2, 1] = cr * sp * sy - sr * cy
+    R[..., 2, 2] = cr * cp
+    return R
+
+
 def combine_two_mean_var(cnt_mean_var_1, cnt_mean_var_2):
     """
     TODO add docstring
