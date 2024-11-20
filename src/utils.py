@@ -338,3 +338,21 @@ def randomize_labels(labels):
 
     label_map = {l: n for n, l in enumerate(unique_labels)}
     return np.array([label_map[i] for i in labels])
+
+
+def group_sizes_by_label(labels):
+
+    I = np.argsort(labels)
+    L = labels[I]
+
+    split = np.where(np.diff(L))[0] + 1
+    split = np.r_[0, split, len(L)]
+
+    count = np.diff(split)
+    count = np.repeat(count, count)
+
+    # resort to the original order
+    J = np.argsort(I)
+    count = count[J]
+
+    return count
