@@ -1,6 +1,7 @@
 import random
 import unittest
 
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -221,6 +222,49 @@ class TestSetGradRequiredLayerTrain(unittest.TestCase):
         self.assertFalse(model.training)
         self.assertFalse(model.fc1.training)
         self.assertFalse(model.fc2.training)
+
+
+class TestPositionalEncoding(unittest.TestCase):
+
+    def test_output_shape(self):
+
+        seq = 10
+        d = 20
+        pos_encoding = utils_torch.positional_encoding(seq, d)
+        self.assertEqual(pos_encoding.shape, (seq, d))
+
+    def test_output(self):
+
+        # fmt: off
+        expected_output = [
+            [       0.0,         1.0,        0.0],
+            [0.84147098,  0.54030231, 0.00215443],
+            [0.90929743, -0.41614684, 0.00430886],
+        ]
+        # fmt: on
+
+        seq = 3
+        d = 3
+
+        pos_encoding = utils_torch.positional_encoding(seq, d)
+
+        self.assertTrue(np.allclose(pos_encoding, expected_output))
+
+    def test_zero_sequence_1(self):
+
+        seq = 0
+        d = 20
+        pos_encoding = utils_torch.positional_encoding(seq, d)
+        self.assertEqual(pos_encoding.shape, (seq, d))
+        self.assertEqual(pos_encoding.size, 0)
+
+    def test_zero_sequence_2(self):
+
+        seq = 10
+        d = 0
+        pos_encoding = utils_torch.positional_encoding(seq, d)
+        self.assertEqual(pos_encoding.shape, (seq, d))
+        self.assertEqual(pos_encoding.size, 0)
 
 
 if __name__ == "__main__":

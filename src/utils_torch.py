@@ -212,6 +212,28 @@ def set_grad_required_layer_train(model):
         module = set_grad_required_layer_train(module)
 
 
+def positional_encoding(seq, d, n=10000):
+    """
+    a faster implementation than the original one from
+    https://machinelearningmastery.com/a-gentle-introduction-to-positional-encoding-in-transformer-models-part-1/
+    """
+    seq = int(seq)
+    d = int(d)
+
+    numerator = np.arange(seq)[:, None]
+
+    denominator = np.arange(d)
+    denominator = denominator // 2
+    denominator = 2.0 * denominator / d
+    denominator = np.power(n, denominator)
+
+    pos_encoding = np.zeros((seq, d))
+    pos_encoding[:, 0::2] = np.sin(numerator / denominator[0::2])
+    pos_encoding[:, 1::2] = np.cos(numerator / denominator[1::2])
+
+    return pos_encoding
+
+
 class CustomizedLRScheduler(optim.lr_scheduler._LRScheduler):
     """
     TODO: docstring
