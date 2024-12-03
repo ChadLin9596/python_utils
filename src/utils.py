@@ -181,6 +181,70 @@ def euler_to_R(euler):
     return R
 
 
+def _valid_shape_rotation_matrix(R):
+
+    if R.ndim < 2 or np.shape(R)[-2:] != (3, 3):
+        raise ValueError("shape of R must be (..., 3, 3)")
+
+
+def _valid_shape_translation_vector(T):
+
+    if T.ndim < 1 or np.shape(T)[-1] != 3:
+        raise ValueError("shape of T must be (..., 3)")
+
+
+def _valid_shape_rotation_matrix_and_translation_vector(R, T):
+
+    _valid_shape_rotation_matrix(R)
+    _valid_shape_translation_vector(T)
+
+    if np.shape(R)[:-2] != np.shape(T)[:-1]:
+        raise ValueError("shape of R and T must be compatible")
+
+
+def invert_transform(R, T):
+    """
+    assumes R is a rotation matrix and T is a translation vector,
+    where are used in the folowing way:
+    target_points = source_points @ R.T + T
+
+    this function returns the inverse transformation, R_inv and T_inv,
+    such that:
+    source_points = target_points @ R_inv.T + T_inv
+    """
+
+    _valid_shape_rotation_matrix_and_translation_vector(R, T)
+
+    R_inv = np.swapaxes(R, -1, -2)
+    T_inv = -np.einsum("...ij,...j->...i", R_inv, T)
+
+    return R_inv, T_inv
+
+
+def merge_two_transform(R1, T1, R2, T2):
+    """
+    assumes R1, T1 and R2, T2 are rotation matrices and translation vectors,
+    where are used in the folowing way:
+    intermediate_points = source_points @ R1.T + T1
+    target_points = intermediate_points @ R2.T + T2
+
+    this function returns the merged transformation, R and T, such that:
+    target_points = source_points @ R.T + T
+    """
+
+    _valid_shape_rotation_matrix_and_translation_vector(R1, T1)
+    _valid_shape_rotation_matrix_and_translation_vector(R2, T2)
+
+    if np.shape(R1) != np.shape(R2):
+        raise ValueError("shape of R1 and R2 must be the same")
+
+    # (R1.T @ R2.T).T == R2 @ R1
+    R = np.einsum("...ij,...jk->...ik", R2, R1)
+    T = T2 + np.einsum("...ij,...j->...i", R2, T1)
+
+    return R, T
+
+
 def combine_two_mean_var(cnt_mean_var_1, cnt_mean_var_2):
     """
     TODO add docstring
