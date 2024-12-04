@@ -20,6 +20,16 @@ _header = [
     "DATA",
 ]
 
+# this format is used for the visualization tool: cloud compare
+# the fields 'x', 'y', 'z' are mandatory
+# the data type is suggested to be float32 (float64 will raise an error)
+# more fields can be added depending on the application
+CLOUD_COMPARE_DTYPE = [
+    ("x", "<f4"),
+    ("y", "<f4"),
+    ("z", "<f4"),
+]
+
 
 def parse_header(fd):
     H = {}
