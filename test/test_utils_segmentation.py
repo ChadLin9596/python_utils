@@ -41,6 +41,28 @@ class TestSegmentedOperations(unittest.TestCase):
             utils_segmentation.segmented_mean(x, s_ind, e_ind), expected
         )
 
+    def test_segmented_max(self):
+        x = np.array([2, 3, 5, 1, 4, 7])
+        s_ind = np.array([0, 2, 3, 5])
+        e_ind = np.array([2, 3, 6, 6])
+
+        expected = np.array([3, 5, 7, 7])
+
+        np.testing.assert_array_equal(
+            utils_segmentation.segmented_max(x, s_ind, e_ind), expected
+        )
+
+    def test_segmented_min(self):
+        x = np.array([2, 3, 5, 1, 4, 7])
+        s_ind = np.array([0, 2, 3, 5])
+        e_ind = np.array([2, 3, 6, 6])
+
+        expected = np.array([2, 5, 1, 7])
+
+        np.testing.assert_array_equal(
+            utils_segmentation.segmented_min(x, s_ind, e_ind), expected
+        )
+
     def test_error_conditions(self):
         x = np.array([1, 2, 3])
         s_ind = np.array([0, 2])
