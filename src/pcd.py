@@ -4,6 +4,8 @@ import struct
 import lzf
 import numpy as np
 
+from . import visualization_pptk
+
 # Reference:
 # https://pointclouds.org/documentation/tutorials/pcd_file_format.html
 
@@ -28,7 +30,48 @@ CLOUD_COMPARE_DTYPE = [
     ("x", "<f4"),
     ("y", "<f4"),
     ("z", "<f4"),
+    ("rgb", "<f4"),
 ]
+
+
+def points_to_cloud_compare_pcd(
+    xyz,
+    intensity=None,
+    s_min=None,
+    s_max=None,
+    color_map=None,
+):
+
+    # TODO: make intensity to intensity_or_rgb
+
+    N = len(xyz)
+    if np.shape(xyz) != (N, 3):
+        raise ValueError("xyz should be (N, 3)")
+
+    if intensity is not None and len(intensity) != N:
+        raise ValueError("intensity should have length N")
+
+    R = np.zeros(N, dtype=np.dtype(CLOUD_COMPARE_DTYPE))
+    R["x"] = xyz[:, 0]
+    R["y"] = xyz[:, 1]
+    R["z"] = xyz[:, 2]
+
+    if intensity is None:
+        return R
+
+    s_min = np.min(intensity) if s_min is None else s_min
+    s_max = np.max(intensity) if s_max is None else s_max
+    func = visualization_pptk.make_color(s_min, s_max, color_map=color_map)
+
+    bgr = func(intensity)[:, ::-1]
+    bgr = np.vstack([bgr.T, np.ones(N)]).T
+    bgr = bgr * 255
+    bgr = bgr.astype(np.uint8).tobytes()
+    bgr = np.frombuffer(bgr, dtype=np.float32)
+
+    R["rgb"] = bgr
+
+    return R
 
 
 def parse_header(fd):
