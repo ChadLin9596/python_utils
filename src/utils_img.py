@@ -1,6 +1,7 @@
 import numpy as np
 
 from . import utils
+from . import utils_segmentation
 
 
 def clamp_image(img):
@@ -89,3 +90,100 @@ def translate_image(img, tx, ty):
     result[dst_row_min:dst_row_max, dst_col_min:dst_col_max] = foo
 
     return result
+
+
+def is_camera_points_in_FOV(
+    camera_pts,
+    intrinsic,
+    H,
+    W,
+    max_distance=None,
+    min_distance=None,
+):
+
+    img_pts = camera_pts / camera_pts[:, 2:]
+    img_pts = img_pts @ intrinsic.T
+
+    # fmt: off
+    mask = (
+        (img_pts[:, 0] >= 0) &
+        (img_pts[:, 0] < W) &
+        (img_pts[:, 1] >= 0) &
+        (img_pts[:, 1] < H) &
+        (camera_pts[:, 2] > 0)
+    )
+    # fmt: on
+
+    if max_distance is not None:
+        mask &= camera_pts[:, 2] < max_distance
+
+    if min_distance is not None:
+        mask &= camera_pts[:, 2] > min_distance
+
+    return mask
+
+
+def points_to_depth_image(
+    points,
+    intrinsic,
+    extrinsic,
+    H,
+    W,
+    min_distance=None,
+    max_distances=None,
+    return_details=False,
+):
+
+    xyz = np.array(points)
+
+    assert np.shape(intrinsic) == (3, 3)
+    assert np.shape(extrinsic) == (4, 4)
+
+    # apply extrinsic
+    R = extrinsic[:3, :3]
+    t = extrinsic[:3, 3]
+    xyz = R.T @ (xyz - t).T  # (3, N)
+
+    mask = is_camera_points_in_FOV(
+        xyz.T,
+        intrinsic,
+        H,
+        W,
+        max_distance=max_distances,
+        min_distance=min_distance,
+    )
+    xyz = xyz[:, mask]  # (3, M)
+
+    # apply intrinsic
+    x, y, z = intrinsic @ xyz
+
+    v = (x / z).astype(int)
+    u = (y / z).astype(int)
+
+    uv_indices = np.ravel_multi_index((u, v), (H, W))
+    I = np.argsort(uv_indices)
+
+    uv_indices = uv_indices[I]
+
+    splits = np.nonzero(np.diff(uv_indices))[0] + 1
+    splits = np.r_[0, splits, len(uv_indices)]
+
+    D = utils_segmentation.segmented_min(
+        z[I],
+        s_ind=splits[:-1],
+        e_ind=splits[1:],
+    )
+
+    u, v = np.unravel_index(uv_indices[splits[:-1]], (H, W))
+
+    depth = np.ones((H, W)) * -1
+    depth[u, v] = D
+
+    if return_details:
+        details = {
+            "camera_pts": xyz.T,
+            "mask": mask,
+        }
+        return depth, details
+
+    return depth
