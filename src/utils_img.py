@@ -187,3 +187,50 @@ def points_to_depth_image(
         return depth, details
 
     return depth
+
+
+def depth_image_to_points(
+    depth,
+    intrinsic,
+    extrinsic,
+    H,
+    W,
+    offset=0.5,
+    scale=1.0,
+):
+
+    depth = np.array(depth)
+
+    assert np.prod(depth.shape) == 1.0 * H * W
+    assert np.shape(intrinsic) == (3, 3)
+    assert np.shape(extrinsic) == (4, 4)
+
+    # x = [
+    #     [0, 1, 2, ..., W-1],
+    #     [0, 1, 2, ..., W-1],
+    #     ...,
+    #     [0, 1, 2, ..., W-1],
+    # ]
+
+    # y = [
+    #     [  0,   0,   0, ...,   0],
+    #     [  1,   1,   1, ...,   1],
+    #     ...,
+    #     [H-1, H-1, H-1, ..., H-1],
+    # ]
+
+    x, y = np.meshgrid(np.arange(W), np.arange(H))
+    x = x.flatten() + offset
+    y = y.flatten() + offset
+    depth = depth.flatten() * scale
+
+    xyz = np.vstack([x, y, np.ones_like(x)])  # (3, H * W)
+    xyz = np.linalg.inv(intrinsic) @ xyz  # (3, H * W)
+    xyz = xyz * depth  # (3, H * W)
+
+    # equivalent to: extrinsic @ np.vstack([xyz, np.ones(H * W)])
+    R = extrinsic[:3, :3]
+    t = extrinsic[:3, 3]
+    xyz = R @ xyz + t[:, None]  # (3, H * W)
+
+    return xyz.T  # (H * W, 3)

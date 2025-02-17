@@ -112,6 +112,14 @@ class PoseSequence(Array):
     def R(self):
         return utils.Q_to_R(self.quaternion)
 
+    @property
+    def transformation(self):
+        T = np.eye(4)
+        T = np.repeat(T[None, ...], len(self), axis=0)
+        T[:, :3, :3] = self.R
+        T[:, :3, 3] = self.xyz
+        return T
+
     @xyz.setter
     def xyz(self, value):
         self._data[["x", "y", "z"]] = value
