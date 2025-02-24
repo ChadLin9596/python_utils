@@ -92,6 +92,60 @@ def translate_image(img, tx, ty):
     return result
 
 
+def _trans_from_world_to_camera(points, extrinsic):
+    R = extrinsic[:3, :3]
+    t = extrinsic[:3, 3]
+    points = R.T @ (points - t).T
+    points = points.T
+    return points
+
+
+def _trans_from_camera_to_world(points, extrinsic):
+    R = extrinsic[:3, :3]
+    t = extrinsic[:3, 3]
+    points = R @ points.T + t[:, None]
+    points = points.T
+    return points
+
+
+def _indices_to_each_pixel(camera_points, intrinsic, H, W):
+
+    x, y, z = intrinsic @ camera_points.T
+    v = (x / z).astype(int)
+    u = (y / z).astype(int)
+
+    uv_indices = np.ravel_multi_index((u, v), (H, W))
+    sorted_indices = np.argsort(uv_indices)
+    uv_indices = uv_indices[sorted_indices]
+
+    splits = np.nonzero(np.diff(uv_indices))[0] + 1
+    splits = np.r_[0, splits, len(uv_indices)]
+
+    return sorted_indices, splits
+
+
+def is_points_in_FOV(
+    points,
+    intrinsic,
+    extrinsic,
+    H,
+    W,
+    max_distance=None,
+    min_distance=None,
+):
+
+    mask = is_camera_points_in_FOV(
+        _trans_from_world_to_camera(points, extrinsic),
+        intrinsic,
+        H,
+        W,
+        max_distance=max_distance,
+        min_distance=min_distance,
+    )
+
+    return mask
+
+
 def is_camera_points_in_FOV(
     camera_pts,
     intrinsic,
@@ -228,9 +282,6 @@ def depth_image_to_points(
     xyz = np.linalg.inv(intrinsic) @ xyz  # (3, H * W)
     xyz = xyz * depth  # (3, H * W)
 
-    # equivalent to: extrinsic @ np.vstack([xyz, np.ones(H * W)])
-    R = extrinsic[:3, :3]
-    t = extrinsic[:3, 3]
-    xyz = R @ xyz + t[:, None]  # (3, H * W)
+    xyz = _trans_from_camera_to_world(xyz, extrinsic)
+    return xyz
 
-    return xyz.T  # (H * W, 3)
