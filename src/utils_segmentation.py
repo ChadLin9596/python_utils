@@ -127,7 +127,7 @@ def segmented_where(x, s_ind, e_ind, values):
     results = []
 
     for s, e, val in zip(s_ind, e_ind, values):
-        result = np.where(x[s:e] == val)[0]
+        result = s + np.where(x[s:e] == val)[0]
         results.append(result)
 
     return results
