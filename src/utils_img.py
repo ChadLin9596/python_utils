@@ -355,3 +355,37 @@ def inpaint_by_conv_interpolation(
     out_arr = [func(arr[..., i], **kwargs) for i in range(arr.shape[-1])]
     out_arr = np.dstack(out_arr)
     return out_arr
+
+
+def hsv_to_rgb(hsv):
+    """
+    it is equivalent to matplotlib.colors.hsv_to_rgb
+    TOTHINK: why not use matplotlib.colors.hsv_to_rgb?
+    """
+
+    h, s, v = np.moveaxis(hsv, -1, 0)  # Split into components
+
+    i = (h * 6).astype(int)  # Sector index
+    f = (h * 6) - i  # Fractional part
+    p = v * (1 - s)
+    q = v * (1 - s * f)
+    t = v * (1 - s * (1 - f))
+
+    i = i % 6
+
+    conditions = [
+        (i == 0, (v, t, p)),
+        (i == 1, (q, v, p)),
+        (i == 2, (p, v, t)),
+        (i == 3, (p, q, v)),
+        (i == 4, (t, p, v)),
+        (i == 5, (v, p, q)),
+    ]
+
+    r, g, b = np.zeros_like(h), np.zeros_like(h), np.zeros_like(h)
+
+    for condition, (rc, gc, bc) in conditions:
+        mask = condition
+        r[mask], g[mask], b[mask] = rc[mask], gc[mask], bc[mask]
+
+    return np.stack([r, g, b], axis=-1)
