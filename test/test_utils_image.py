@@ -49,6 +49,52 @@ class TestImageOverlay(unittest.TestCase):
         with self.assertRaises(ValueError):
             utils_img.overlay_image(img, layer, 0.5, mask)
 
+    def test_inpaint_by_conv_interpolation_1(self):
+        """Test inpainting by convolutional interpolation."""
+        # fmt: off
+        img = np.array([
+            [-1.0,  0.0,  1.0],
+            [ 1.0, -1.0,  0.0],
+            [ 0.0,  1.0, -1.0],
+        ])
+
+        expected = np.array([
+            [0.5, 0.0, 1.0],
+            [1.0, 0.5, 0.0],
+            [0.0, 1.0, 0.5],
+        ])
+        # fmt: on
+
+        result = utils_img.inpaint_by_conv_interpolation(
+            img,
+            kernel_size=3,
+            missing_condition_or_mask=lambda x: x == -1,
+        )
+        np.testing.assert_array_equal(result, expected)
+
+    def test_inpaint_by_conv_interpolation_2(self):
+        """Test inpainting by convolutional interpolation."""
+        # fmt: off
+        img = np.array([
+            [-1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0],
+        ])
+
+        expected = np.array([
+            [-1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0],
+        ])
+        # fmt: on
+
+        result = utils_img.inpaint_by_conv_interpolation(
+            img,
+            kernel_size=3,
+            missing_condition_or_mask=lambda x: x == -1,
+        )
+        np.testing.assert_array_equal(result, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,6 +5,7 @@ numpy
 pandas
 Pillow
 requests
+scipy
 
 # maintenance
 black

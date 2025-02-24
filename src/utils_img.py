@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.ndimage
 
 from . import utils
 from . import utils_segmentation
@@ -304,3 +305,53 @@ def depth_image_to_points(
     xyz = _trans_from_camera_to_world(xyz, extrinsic)
     return xyz
 
+
+def _inpaint_by_conv_interpolation(
+    arr,
+    kernel_size=3,
+    missing_condition_or_mask=lambda x: x == -1,
+):
+
+    if callable(missing_condition_or_mask):
+        mask = missing_condition_or_mask(arr)
+    else:
+        mask = missing_condition_or_mask
+
+    assert np.shape(mask) == np.shape(arr)
+
+    kernel = np.ones((kernel_size, kernel_size))
+
+    valid_mask = (~mask).astype(np.float32)
+
+    valid_arr = arr * valid_mask
+
+    kwargs = {"mode": "constant", "cval": 0.0}
+    valid_sum = scipy.ndimage.convolve(valid_arr, kernel, **kwargs)
+    valid_cnt = scipy.ndimage.convolve(valid_mask, kernel, **kwargs)
+
+    out_arr = arr.copy()
+    out_arr[mask] = valid_sum[mask] / np.maximum(valid_cnt[mask], 1)
+
+    mask = valid_cnt == 0
+    out_arr[mask] = arr[mask]
+    return out_arr
+
+
+def inpaint_by_conv_interpolation(
+    arr,
+    kernel_size=3,
+    missing_condition_or_mask=lambda x: x == -1,
+):
+
+    func = _inpaint_by_conv_interpolation
+    kwargs = {
+        "kernel_size": kernel_size,
+        "missing_condition_or_mask": missing_condition_or_mask,
+    }
+
+    if arr.ndim == 2:
+        return func(arr, **kwargs)
+
+    out_arr = [func(arr[..., i], **kwargs) for i in range(arr.shape[-1])]
+    out_arr = np.dstack(out_arr)
+    return out_arr
