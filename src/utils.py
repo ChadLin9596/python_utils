@@ -181,6 +181,47 @@ def euler_to_R(euler):
     return R
 
 
+def _R_to_euler(R):
+    """TODO: unittest and docstring"""
+
+    sy = np.sqrt(R[0, 0] ** 2 + R[1, 0] ** 2)
+    singular = sy < 1e-6
+
+    if singular:
+        x = np.arctan2(-R[1, 2], R[1, 1])
+        y = np.arctan2(-R[2, 0], sy)
+        z = 0
+    else:
+        x = np.arctan2(R[2, 1], R[2, 2])
+        y = np.arctan2(-R[2, 0], sy)
+        z = np.arctan2(R[1, 0], R[0, 0])
+
+    return np.array([x, y, z])
+
+
+def R_to_euler(R):
+    """TODO: unittest and docstring"""
+
+    _valid_shape_rotation_matrix(R)
+
+    if R.ndim == 2:
+        return _R_to_euler(R)
+
+    sy = np.sqrt(R[..., 0, 0] ** 2 + R[..., 1, 0] ** 2)
+
+    singular = sy < 1e-6
+
+    x = np.arctan2(R[..., 2, 1], R[..., 2, 2])
+    y = np.arctan2(-R[..., 2, 0], sy)
+    z = np.arctan2(R[..., 1, 0], R[..., 0, 0])
+
+    x[singular] = np.arctan2(-R[singular, 1, 2], R[singular, 1, 1])
+    y[singular] = np.arctan2(-R[singular, 2, 0], sy[singular])
+    z[singular] = 0
+
+    return np.stack([x, y, z], axis=-1)
+
+
 def _valid_shape_rotation_matrix(R):
 
     if R.ndim < 2 or np.shape(R)[-2:] != (3, 3):
