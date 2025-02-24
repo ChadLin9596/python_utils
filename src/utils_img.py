@@ -183,64 +183,83 @@ def points_to_depth_image(
     extrinsic,
     H,
     W,
+    invalid_value=-1,
     min_distance=None,
-    max_distances=None,
+    max_distance=None,
     return_details=False,
+    other_attrs=[],
 ):
 
-    xyz = np.array(points)
+    world_xyz = np.array(points)
 
     assert np.shape(intrinsic) == (3, 3)
     assert np.shape(extrinsic) == (4, 4)
 
-    # apply extrinsic
-    R = extrinsic[:3, :3]
-    t = extrinsic[:3, 3]
-    xyz = R.T @ (xyz - t).T  # (3, N)
-
-    mask = is_camera_points_in_FOV(
-        xyz.T,
+    # filter out points outside of FOV
+    FOV_mask = is_points_in_FOV(
+        world_xyz,
         intrinsic,
+        extrinsic,
         H,
         W,
-        max_distance=max_distances,
+        max_distance=max_distance,
         min_distance=min_distance,
     )
-    xyz = xyz[:, mask]  # (3, M)
+    world_xyz = world_xyz[FOV_mask]
 
-    # apply intrinsic
-    x, y, z = intrinsic @ xyz
+    # convert points to camera coordinate
+    cam_xyz = _trans_from_world_to_camera(world_xyz, extrinsic)
 
-    v = (x / z).astype(int)
-    u = (y / z).astype(int)
+    # sort points by pixel indices
+    sorted_indices, splits = _indices_to_each_pixel(cam_xyz, intrinsic, H, W)
+    cam_xyz = cam_xyz[sorted_indices]
 
-    uv_indices = np.ravel_multi_index((u, v), (H, W))
-    I = np.argsort(uv_indices)
-
-    uv_indices = uv_indices[I]
-
-    splits = np.nonzero(np.diff(uv_indices))[0] + 1
-    splits = np.r_[0, splits, len(uv_indices)]
-
-    D = utils_segmentation.segmented_min(
-        z[I],
+    # get the depth and indices from the closest points of each pixel
+    depth, min_indices = utils_segmentation.segmented_min(
+        cam_xyz[:, 2],
         s_ind=splits[:-1],
         e_ind=splits[1:],
+        return_indices=True,
     )
+    min_indices = np.r_[[i[0] for i in min_indices]]
 
-    u, v = np.unravel_index(uv_indices[splits[:-1]], (H, W))
+    # fill the depth image
+    v, u, z = intrinsic @ cam_xyz[min_indices].T
+    u = (u / z).astype(int)
+    v = (v / z).astype(int)
 
-    depth = np.ones((H, W)) * -1
-    depth[u, v] = D
+    depth_img = np.full((H, W), invalid_value, dtype=np.float64)
+    depth_img[u, v] = depth
+
+    # form the details for further usage
+    details = {
+        "uv": (u, v),
+        "FOV_mask": FOV_mask,
+        "closest_indices": sorted_indices[min_indices],
+    }
+
+    if len(other_attrs):
+
+        u, v = details["uv"]
+        FOV_mask = details["FOV_mask"]
+        closest_indices = details["closest_indices"]
+
+        output_attrs = []
+        for attrs in other_attrs:
+            assert len(attrs) == len(points)
+            attrs = np.array(attrs)[FOV_mask][closest_indices]
+
+            attrs_img = np.full((H, W, *attrs.shape[1:]), invalid_value)
+            attrs_img[u, v] = attrs
+            output_attrs.append(attrs_img)
+
+    output = depth_img
+    if len(other_attrs):
+        output = (output,) + tuple(output_attrs)
 
     if return_details:
-        details = {
-            "camera_pts": xyz.T,
-            "mask": mask,
-        }
-        return depth, details
-
-    return depth
+        return *output, details
+    return output
 
 
 def depth_image_to_points(
