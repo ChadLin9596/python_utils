@@ -203,3 +203,31 @@ def segmented_min(x, s_ind, e_ind, return_indices=False):
         min_ind = segmented_where(x, s_ind, e_ind, results)
         return results, min_ind
     return results
+
+
+def sliding_window(x, window_size=3, method="mean"):
+
+    func_map = {
+        "sum": segmented_sum,
+        "count": segmented_count,
+        "mean": segmented_mean,
+        "max": segmented_max,
+        "min": segmented_min,
+    }
+
+    if method not in func_map:
+        raise ValueError(f"Unknown method: {method}")
+
+    if window_size % 2 == 0:
+        raise ValueError("window_size must be an odd number")
+
+    N = len(x)
+    x_index = np.arange(N)
+    s_ind = np.clip(x_index - window_size // 2, 0, N)
+    e_ind = np.clip(x_index + window_size // 2 + 1, 0, N)
+
+    func = func_map[method]
+    results = func(x, s_ind, e_ind)
+    assert len(results) == N
+
+    return results
