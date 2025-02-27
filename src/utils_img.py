@@ -301,6 +301,7 @@ def depth_image_to_points(
     xyz = np.vstack([x, y, np.ones_like(x)])  # (3, H * W)
     xyz = np.linalg.inv(intrinsic) @ xyz  # (3, H * W)
     xyz = xyz * depth  # (3, H * W)
+    xyz = xyz.T  # (H * W, 3)
 
     xyz = _trans_from_camera_to_world(xyz, extrinsic)
     return xyz
