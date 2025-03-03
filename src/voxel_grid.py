@@ -115,7 +115,9 @@ class VoxelGrid:
     @property
     def voxel_centers(self):
         voxel_index = self.voxel_indices
-        return voxel_index * self._voxel_size + self._voxel_size / 2
+        voxel_size = self._voxel_size
+        voxel_size[voxel_size == np.inf] = 0
+        return voxel_index * voxel_size + voxel_size / 2
 
     @property
     def voxel_centroids(self):
