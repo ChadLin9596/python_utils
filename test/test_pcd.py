@@ -1,7 +1,7 @@
 import os
 import unittest
 
-import src.pcd as pcd
+import py_utils.pcd as pcd
 
 
 class TestPCD(unittest.TestCase):

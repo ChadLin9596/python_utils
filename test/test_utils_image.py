@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-import src.utils_img as utils_img
+import py_utils.utils_img as utils_img
 
 
 class TestImageOverlay(unittest.TestCase):

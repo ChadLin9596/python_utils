@@ -4,7 +4,7 @@ import pickle
 
 import numpy as np
 
-import src.array_data as array_data
+import py_utils.array_data as array_data
 
 _path = os.path.dirname(os.path.realpath(__file__))
 

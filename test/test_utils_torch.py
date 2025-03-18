@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-import src.utils_torch as utils_torch
+import py_utils.utils_torch as utils_torch
 
 
 class TestSeedEverything(unittest.TestCase):

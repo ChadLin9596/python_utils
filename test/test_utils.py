@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-import src.utils as utils
+import py_utils.utils as utils
 
 
 class TestCombineMeanVar(unittest.TestCase):

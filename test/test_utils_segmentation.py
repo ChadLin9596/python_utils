@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-import src.utils_segmentation as utils_segmentation
+import py_utils.utils_segmentation as utils_segmentation
 
 
 class TestSegmentedOperations(unittest.TestCase):

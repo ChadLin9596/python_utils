@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-import src.voxel_grid as voxel_grid
+import py_utils.voxel_grid as voxel_grid
 
 
 class TestVoxelGrid(unittest.TestCase):
