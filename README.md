@@ -8,19 +8,32 @@ a few small tools that I greatly rely on in the following area:
 ### file structure
 
 ```
+python_utils
 ├── examples
-│   └── demo_<tools>.ipynb
+│   └── demo_<tool>.ipynb
 │
 ├── src
-│   └── <tools>.py
-│
+│   └── py_utils
+│       ├── __init__.py
+│       └── <tool>>.py
+|
 ├── test
+|   ├── __init__.py
 │   └── test_<tools>>.py
 │
-├── __init__.py
 ├── LICENSE
 ├── README.md
-└── requirements.txt
+├── requirements.txt
+└── setup.py
+```
+
+### Install
+
+```bash
+$ cd <your workspace>
+$ git clone https://github.com/ChadLin9596/python_utils
+$ cd python_utils
+$ pip install -e .
 ```
 
 ### Unittest
