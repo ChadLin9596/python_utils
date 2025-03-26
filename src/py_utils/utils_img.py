@@ -250,7 +250,12 @@ def points_to_depth_image(
             assert len(attrs) == len(points)
             attrs = np.array(attrs)[FOV_mask][closest_indices]
 
-            attrs_img = np.full((H, W, *attrs.shape[1:]), invalid_value)
+            attrs_img = np.full(
+                (H, W, *attrs.shape[1:]),
+                invalid_value,
+                dtype=attrs.dtype,
+            )
+
             attrs_img[u, v] = attrs
             output_attrs.append(attrs_img)
 
