@@ -318,3 +318,61 @@ class CustomizedLRScheduler(optim.lr_scheduler._LRScheduler):
             scale = self.get_scale(self.last_epoch)
 
         return [base_lr * scale for base_lr in self.base_lrs]
+
+
+def numpy_to_torch_wrapper(
+    permute=[2, 0, 1],
+    batchify=True,
+    device=None,
+):
+
+    def decorator(func):
+
+        def wrapper(*args, **kwargs):
+
+            new_args = []
+            new_kwargs = {}
+
+            for arg in args:
+
+                if isinstance(arg, torch.nn.Module):
+                    new_args.append(arg)
+                    continue
+
+                if isinstance(arg, torch.Tensor):
+                    new_args.append(arg)
+                    continue
+
+                arg = np.array(arg)
+                arg = torch.from_numpy(arg).permute(*permute)
+
+                if batchify:
+                    arg = arg.unsqueeze(0)
+
+                if device is not None:
+                    arg = arg.to(device)
+
+                new_args.append(arg)
+
+            for key, value in kwargs.items():
+
+                if isinstance(value, torch.Tensor):
+                    new_kwargs[key] = value
+                    continue
+
+                value = np.array(value)
+                value = torch.from_numpy(value).permute(*permute)
+
+                if batchify:
+                    value = value.unsqueeze(0)
+
+                if device is not None:
+                    value = value.to(device)
+
+                new_kwargs[key] = value
+
+            return func(*new_args, **new_kwargs)
+
+        return wrapper
+
+    return decorator
