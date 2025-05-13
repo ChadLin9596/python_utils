@@ -395,3 +395,19 @@ def hsv_to_rgb(hsv):
         r[mask], g[mask], b[mask] = rc[mask], gc[mask], bc[mask]
 
     return np.stack([r, g, b], axis=-1)
+
+
+def update_intrinsics_by_resized(K, orig_shape, resized_shape):
+
+    # Compute scale factors for resizing
+    scale_x = resized_shape[1] / orig_shape[1]  # W' / W
+    scale_y = resized_shape[0] / orig_shape[0]  # H' / H
+
+    # Scale the intrinsic matrix due to resizing
+    K_resized = K.copy()
+    K_resized[0, 0] *= scale_x  # fx'
+    K_resized[1, 1] *= scale_y  # fy'
+    K_resized[0, 2] *= scale_x  # cx'
+    K_resized[1, 2] *= scale_y  # cy'
+
+    return K_resized
