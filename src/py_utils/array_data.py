@@ -77,6 +77,20 @@ class Timestamps(Array):
     def timestamps(self, value):
         self._data["timestamp"] = np.array(value, dtype=np.int64)
 
+    def align_timestamps(self, timestamps):
+
+        timestamps = np.array(timestamps)
+
+        I = np.searchsorted(self.timestamps, timestamps, side="left")
+        I = np.clip(I, 1, len(self) - 1)
+
+        # find the closest timestamp
+        d1 = np.abs(self.timestamps[I - 1] - timestamps)
+        d2 = np.abs(self.timestamps[I] - timestamps)
+        I = np.where(d1 < d2, I - 1, I)
+
+        return self[I]
+
 
 ##############
 # Trajectory #
