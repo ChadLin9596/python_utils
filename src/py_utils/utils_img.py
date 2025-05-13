@@ -125,6 +125,24 @@ def _indices_to_each_pixel(camera_points, intrinsic, H, W):
     return sorted_indices, splits
 
 
+def indices_to_closest_points(camera_points, intrinsic, H, W):
+
+    sorted_indices, splits = _indices_to_each_pixel(
+        camera_points, intrinsic, H, W
+    )
+
+    # get the depth and indices from the closest points of each pixel
+    depth, min_indices = utils_segmentation.segmented_min(
+        camera_points[sorted_indices][:, 2],
+        s_ind=splits[:-1],
+        e_ind=splits[1:],
+        return_indices=True,
+    )
+    min_indices = np.r_[[i[0] for i in min_indices]]
+
+    return sorted_indices[min_indices]
+
+
 def is_points_in_FOV(
     points,
     intrinsic,
@@ -133,6 +151,7 @@ def is_points_in_FOV(
     W,
     max_distance=None,
     min_distance=None,
+    closest_only=False,
 ):
 
     mask = is_camera_points_in_FOV(
@@ -142,6 +161,7 @@ def is_points_in_FOV(
         W,
         max_distance=max_distance,
         min_distance=min_distance,
+        closest_only=closest_only,
     )
 
     return mask
@@ -154,6 +174,7 @@ def is_camera_points_in_FOV(
     W,
     max_distance=None,
     min_distance=None,
+    closest_only=False,
 ):
 
     img_pts = camera_pts / camera_pts[:, 2:]
@@ -174,6 +195,12 @@ def is_camera_points_in_FOV(
 
     if min_distance is not None:
         mask &= camera_pts[:, 2] > min_distance
+
+    if closest_only:
+        indices = indices_to_closest_points(camera_pts[mask], intrinsic, H, W)
+        new_mask = np.zeros_like(mask)
+        new_mask[np.where(mask)[0][indices]] = True
+        mask = new_mask
 
     return mask
 
