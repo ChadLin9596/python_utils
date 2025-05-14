@@ -316,15 +316,12 @@ def points_to_depth_image(
     # ((H, W, ?), ...) if len(other_attrs) > 0 else empty tuple
     output_attrs = output[1:-1]
 
-    # convert points to camera coordinate
-    point_map = point_map.reshape(-1, 3)
-    point_map = point_map[np.all(point_map != invalid_value, axis=-1)]
-    cam_xyz = _trans_from_world_to_camera(point_map.reshape(-1, 3), extrinsic)
-
     u, v = details["uv"]
 
-    assert len(cam_xyz) == len(u)
-    assert len(cam_xyz) == len(v)
+    # convert points to camera coordinate
+    world_points = point_map[u, v]
+    world_points = world_points.reshape(-1, 3)
+    cam_xyz = _trans_from_world_to_camera(world_points, extrinsic)
 
     depth_img = np.full((H, W), invalid_value, dtype=np.float64)
     depth_img[u, v] = cam_xyz[:, 2]
