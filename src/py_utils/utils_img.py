@@ -205,7 +205,7 @@ def is_camera_points_in_FOV(
     return mask
 
 
-def points_to_depth_image(
+def points_to_point_map(
     points,
     intrinsic,
     extrinsic,
@@ -232,50 +232,36 @@ def points_to_depth_image(
         W,
         max_distance=max_distance,
         min_distance=min_distance,
+        closest_only=True,
     )
     world_xyz = world_xyz[FOV_mask]
 
     # convert points to camera coordinate
     cam_xyz = _trans_from_world_to_camera(world_xyz, extrinsic)
 
-    # sort points by pixel indices
-    sorted_indices, splits = _indices_to_each_pixel(cam_xyz, intrinsic, H, W)
-    cam_xyz = cam_xyz[sorted_indices]
-
-    # get the depth and indices from the closest points of each pixel
-    depth, min_indices = utils_segmentation.segmented_min(
-        cam_xyz[:, 2],
-        s_ind=splits[:-1],
-        e_ind=splits[1:],
-        return_indices=True,
-    )
-    min_indices = np.r_[[i[0] for i in min_indices]]
-
     # fill the depth image
-    v, u, z = intrinsic @ cam_xyz[min_indices].T
+    v, u, z = intrinsic @ cam_xyz.T
     u = (u / z).astype(int)
     v = (v / z).astype(int)
 
-    depth_img = np.full((H, W), invalid_value, dtype=np.float64)
-    depth_img[u, v] = depth
+    point_map = np.full((H, W, 3), invalid_value, dtype=np.float64)
+    point_map[u, v] = world_xyz
 
     # form the details for further usage
     details = {
         "uv": (u, v),
         "FOV_mask": FOV_mask,
-        "closest_indices": sorted_indices[min_indices],
     }
 
     if len(other_attrs):
 
         u, v = details["uv"]
         FOV_mask = details["FOV_mask"]
-        closest_indices = details["closest_indices"]
 
         output_attrs = []
         for attrs in other_attrs:
             assert len(attrs) == len(points)
-            attrs = np.array(attrs)[FOV_mask][closest_indices]
+            attrs = np.array(attrs)[FOV_mask]
 
             attrs_img = np.full(
                 (H, W, *attrs.shape[1:]),
@@ -286,12 +272,72 @@ def points_to_depth_image(
             attrs_img[u, v] = attrs
             output_attrs.append(attrs_img)
 
-    output = depth_img
+    output = (point_map,)
     if len(other_attrs):
-        output = (output,) + tuple(output_attrs)
+        output = output + tuple(output_attrs)
 
     if return_details:
         return *output, details
+
+    if len(output) == 1:
+        return output[0]
+    return output
+
+
+def points_to_depth_image(
+    points,
+    intrinsic,
+    extrinsic,
+    H,
+    W,
+    invalid_value=-1,
+    min_distance=None,
+    max_distance=None,
+    return_details=False,
+    other_attrs=[],
+):
+
+    output = points_to_point_map(
+        points,
+        intrinsic,
+        extrinsic,
+        H,
+        W,
+        invalid_value=invalid_value,
+        min_distance=min_distance,
+        max_distance=max_distance,
+        return_details=True,
+        other_attrs=other_attrs,
+    )
+
+    point_map = output[0]  # (H, W, 3)
+    details = output[-1]  # {"uv": (u, v), "FOV_mask": FOV_mask}
+
+    # ((H, W, ?), ...) if len(other_attrs) > 0 else empty tuple
+    output_attrs = output[1:-1]
+
+    # convert points to camera coordinate
+    point_map = point_map.reshape(-1, 3)
+    point_map = point_map[np.all(point_map != invalid_value, axis=-1)]
+    cam_xyz = _trans_from_world_to_camera(point_map.reshape(-1, 3), extrinsic)
+
+    u, v = details["uv"]
+
+    assert len(cam_xyz) == len(u)
+    assert len(cam_xyz) == len(v)
+
+    depth_img = np.full((H, W), invalid_value, dtype=np.float64)
+    depth_img[u, v] = cam_xyz[:, 2]
+
+    output = (depth_img,)
+    if len(other_attrs):
+        output = output + output_attrs
+
+    if return_details:
+        return *output, details
+
+    if len(output) == 1:
+        return output[0]
     return output
 
 
