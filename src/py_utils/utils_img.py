@@ -1,5 +1,8 @@
+import cv2
 import numpy as np
 import scipy.ndimage
+import scipy.spatial
+import skimage.draw
 
 from . import utils
 from . import utils_segmentation
@@ -468,6 +471,53 @@ def hsv_to_rgb(hsv):
         r[mask], g[mask], b[mask] = rc[mask], gc[mask], bc[mask]
 
     return np.stack([r, g, b], axis=-1)
+
+
+def fill_sparse_boolean_by_convex_hull(sparse_mask):
+    # Create blank mask
+    mask = np.zeros_like(sparse_mask, dtype=np.uint8)
+
+    # Extract (row, col) of True pixels
+    points = np.argwhere(sparse_mask)
+
+    if len(points) < 3:
+        # Too few points for a hull — return empty mask
+        return mask
+
+    # Compute convex hull using OpenCV (expects (x, y) = (col, row))
+    points_cv = points[:, ::-1].astype(np.int32)  # Convert to (x, y)
+    hull = cv2.convexHull(points_cv)
+
+    # Fill the convex hull
+    cv2.fillPoly(mask, [hull], color=1)
+
+    return mask
+
+
+def fill_sparse_boolean_by_delaunay(sparse_mask, return_triangles=False):
+
+    # Create blank mask
+    mask = np.zeros_like(sparse_mask, dtype=np.uint8)
+
+    # Extract (row, col) of True pixels
+    points = np.argwhere(sparse_mask)
+
+    if len(points) < 3:
+        # Too few points for a hull — return empty mask
+        return mask
+
+    tri = scipy.spatial.Delaunay(points)
+
+    for simplex in tri.simplices:
+        triangle = points[simplex]
+        rr, cc = skimage.draw.polygon(
+            triangle[:, 0], triangle[:, 1], shape=mask.shape
+        )
+        mask[rr, cc] = True
+
+    if return_triangles:
+        return mask, tri.simplices
+    return mask
 
 
 def update_intrinsics_by_resized(K, orig_shape, resized_shape):
