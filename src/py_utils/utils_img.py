@@ -127,6 +127,9 @@ def _indices_to_each_pixel(camera_points, intrinsic, H, W):
 
 def indices_to_closest_points(camera_points, intrinsic, H, W):
 
+    if len(camera_points) == 0:
+        return np.array([], dtype=int)
+
     sorted_indices, splits = _indices_to_each_pixel(
         camera_points, intrinsic, H, W
     )
