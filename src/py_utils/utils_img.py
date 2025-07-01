@@ -211,6 +211,40 @@ def is_camera_points_in_FOV(
     return mask
 
 
+def points_to_index_map(
+    points,
+    intrinsic,
+    extrinsic,
+    H,
+    W,
+    min_distance=None,
+    max_distance=None,
+):
+
+    assert np.shape(intrinsic) == (3, 3)
+    assert np.shape(extrinsic) == (4, 4)
+
+    cam_xyz = _trans_from_world_to_camera(points, extrinsic)
+    FOV_mask = is_camera_points_in_FOV(
+        cam_xyz,
+        intrinsic,
+        H,
+        W,
+        max_distance=max_distance,
+        min_distance=min_distance,
+        closest_only=True,
+    )
+
+    v, u, z = intrinsic @ cam_xyz[FOV_mask].T
+    u = (u / z).astype(int)
+    v = (v / z).astype(int)
+
+    index_map = np.full((H, W), -1, dtype=np.int32)
+    index_map[u, v] = np.arange(len(points))[FOV_mask]
+
+    return index_map
+
+
 def points_to_point_map(
     points,
     intrinsic,
