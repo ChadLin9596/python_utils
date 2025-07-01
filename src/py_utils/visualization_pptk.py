@@ -72,6 +72,32 @@ def make_polyline(xyz, eps=0.005):
     return np.vstack([L, xyz[-1:]])
 
 
+def _make_bounding_box_vertices(lx, ly, lz):
+    """
+    Notes:
+    ------
+        4----0
+       /|   /|
+      / 5--/-1
+     / /  / /
+    7----3 /  z y
+    |/   |/   |/
+    6----2    .--x
+    """
+
+    vertices = np.empty((8, 3), dtype=np.float64)
+
+    vertices[0:4, 0] = lx
+    vertices[4:8, 0] = -lx
+    vertices[[0, 1, 4, 5], 1] = ly
+    vertices[[2, 3, 6, 7], 1] = -ly
+    vertices[[0, 3, 4, 7], 2] = lz
+    vertices[[1, 2, 5, 6], 2] = -lz
+
+    vertices = vertices / 2.0
+    return vertices
+
+
 def make_bounding_box_vertices(lxs, lys, lzs):
     """
     Notes:
@@ -84,6 +110,9 @@ def make_bounding_box_vertices(lxs, lys, lzs):
     |/   |/   |/
     6----2    .--x
     """
+
+    if np.isscalar(lxs) and np.isscalar(lys) and np.isscalar(lzs):
+        return _make_bounding_box_vertices(lxs, lys, lzs)
 
     shp = np.shape(lxs)
     vertices = np.empty(shp + (8, 3), dtype=np.float64)
