@@ -158,7 +158,7 @@ class VoxelGrid:
         return np.diff(self._splits)
 
 
-def unique_pcd(pcd_arr, voxel_size=0.2):
+def unique_pcd(pcd_arr, voxel_size=0.2, return_indices=False):
 
     pcd_indices = pcd_arr["center"] // voxel_size
     pcd_indices = pcd_indices.astype(np.int64)
@@ -166,10 +166,15 @@ def unique_pcd(pcd_arr, voxel_size=0.2):
     # unique indices
     _, unique_indices = np.unique(pcd_indices, axis=0, return_index=True)
     unique_indices = np.sort(unique_indices)
-    return pcd_arr[unique_indices]
+
+    pcd_arr = pcd_arr[unique_indices]
+
+    if return_indices:
+        return pcd_arr, unique_indices
+    return pcd_arr
 
 
-def subtract_pcds(pcd_a, pcd_b, voxel_size=0.2):
+def subtract_pcds(pcd_a, pcd_b, voxel_size=0.2, return_mask=False):
 
     pcd_a_indices = (pcd_a["center"] // voxel_size).astype(np.int64)
     pcd_b_indices = (pcd_b["center"] // voxel_size).astype(np.int64)
@@ -183,4 +188,6 @@ def subtract_pcds(pcd_a, pcd_b, voxel_size=0.2):
 
     # keys in 'a' but not in 'b'
     keep_mask = ~np.isin(a_voxel_keys, b_voxel_keys)
+    if return_mask:
+        return pcd_a[keep_mask], keep_mask
     return pcd_a[keep_mask]
