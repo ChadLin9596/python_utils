@@ -205,7 +205,101 @@ def segmented_min(x, s_ind, e_ind, return_indices=False):
     return results
 
 
-def sliding_window(x, window_size=3, method="mean"):
+def compute_sliding_window_indices(N, window_size, same_size=True):
+    """
+    Compute start and end indices for sliding windows over
+    a sequence of length `N`.
+
+    Parameters
+    ----------
+    N : int
+        The length of the sequence over which sliding windows are computed.
+    window_size : int
+        The size of each sliding window.
+    same_size : bool, optional
+        (True) only full-sized windows are returned.
+        (False) partial windows near the boundaries are included as well.
+
+    Returns
+    -------
+    s_ind : np.ndarray of int
+        The array of start indices for each window.
+    e_ind : np.ndarray of int
+        The array of end indices for each window (exclusive).
+
+    Examples
+    --------
+    >>> compute_sliding_window_indices(5, 3, same_size=True)
+    s_ind: [0, 1, 2]
+    e_ind: [3, 4, 5]
+
+    >>> compute_sliding_window_indices(5, 4, same_size=True)
+    s_ind: [0, 1]
+    e_ind: [4, 5]
+
+    >>> compute_sliding_window_indices(5, 6, same_size=True)
+    s_ind: []
+    e_ind: []
+
+    >>> compute_sliding_window_indices(5, 3, same_size=False)
+    s_ind:           [0, 0, 1, 2, 3]
+    e_ind:           [2, 3, 4, 5, 5]
+    -> segment_size: [2, 3, 3, 3, 2]
+
+    >>> compute_sliding_window_indices(5, 4, same_size=False)
+    s_ind:           [0, 0, 0, 1, 2, 3]
+    e_ind:           [2, 3, 4, 5, 5, 5]
+    -> segment_size: [2, 3, 4, 4, 3, 2]
+
+    >>> compute_sliding_window_indices(5, 6, same_size=False)
+    s_ind:           [0, 0, 0, 0, 1, 2]
+    e_ind:           [3, 4, 5, 5, 5, 5]
+    -> segment_size: [3, 4, 5, 5, 4, 3]
+    """
+
+    if window_size % 2:
+        xs = np.arange(N)
+    else:
+        xs = np.arange(N + 1)
+
+    s_ind = np.clip(xs - window_size // 2, 0, N)
+    e_ind = np.clip(xs + window_size // 2 + window_size % 2, 0, N)
+
+    if not same_size:
+        return s_ind, e_ind
+
+    length = e_ind - s_ind
+    M = length == window_size
+
+    return s_ind[M], e_ind[M]
+
+
+def compute_sliding_window_indices_with_overlap(
+    N,
+    window_size,
+    overlap_ratio=0.33,
+):
+
+    s_ind, e_ind = compute_sliding_window_indices(
+        N,
+        window_size,
+        same_size=True,
+    )
+
+    overlap_size = round(window_size * overlap_ratio)
+    stride = window_size - overlap_size
+
+    I = np.arange(len(s_ind))
+    I = np.r_[I[::stride], I[-1]]
+    I = np.unique(I)
+
+    s_ind = s_ind[I]
+    e_ind = e_ind[I]
+
+    return s_ind, e_ind
+
+
+def sliding_window(x, window_size=3, same_size=False, method="mean"):
 
     func_map = {
         "sum": segmented_sum,
@@ -222,9 +316,11 @@ def sliding_window(x, window_size=3, method="mean"):
         raise ValueError("window_size must be an odd number")
 
     N = len(x)
-    x_index = np.arange(N)
-    s_ind = np.clip(x_index - window_size // 2, 0, N)
-    e_ind = np.clip(x_index + window_size // 2 + 1, 0, N)
+    s_ind, e_ind = compute_sliding_window_indices(
+        N,
+        window_size,
+        same_size=same_size,
+    )
 
     func = func_map[method]
     results = func(x, s_ind, e_ind)
