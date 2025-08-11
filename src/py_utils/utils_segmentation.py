@@ -1,4 +1,130 @@
 import numpy as np
+import warnings
+
+try:
+    from numpy_reduceat_ext import _argmax, _argmin
+
+    numpy_argmax_reduceat = _argmax.argmax_reduceat
+    numpy_argmin_reduceat = _argmin.argmin_reduceat
+
+except:
+    warnings.warn(
+        (
+            "numpy_reduceat_ext C extension not found; "
+            "using slower pure-Python fallback. (~20x slower)"
+        ),
+        RuntimeWarning,
+        stacklevel=2,
+    )
+
+    def numpy_argmax_reduceat(array, indices):
+
+        array = np.asarray(array)
+        indices = np.asarray(indices)
+
+        # splits = np.r_[indices, len(array)]
+        splits = np.append(indices, len(array))
+
+        global_indices = np.empty(len(indices), dtype=np.int64)
+        for n, (i, j) in enumerate(zip(splits[:-1], splits[1:])):
+
+            if i >= j:
+                global_indices[n] = i
+                continue
+
+            k = np.argmax(array[i:j])
+            global_indices[n] = k + i
+
+        return global_indices
+
+    def numpy_argmin_reduceat(array, indices):
+
+        array = np.asarray(array)
+        indices = np.asarray(indices)
+
+        splits = np.r_[indices, len(array)]
+
+        global_indices = []
+        for i, j in zip(splits[:-1], splits[1:]):
+
+            if i >= j:
+                global_indices.append(i)
+                continue
+
+            k = np.argmin(array[i:j])
+            global_indices.append(k + i)
+
+        return np.array(global_indices)
+
+
+def _numpy_argmax_reduceat(array, indices):
+    """
+    a slower vectorizing version (for reference and record only)
+    modified from https://stackoverflow.com/questions/41833740
+    """
+
+    array = np.asarray(array)
+    indices = np.asarray(indices)
+
+    if np.any(np.diff(indices) < 0):
+        msg = "`indices` must be monotonically increasing."
+        raise ValueError(msg)
+
+    max_value = np.max(array) + 1
+
+    # create a shifted array enforcing further argsort operation will
+    # not mixed indices across each segment.
+    id_array = np.zeros(len(array), dtype=np.int64)
+    id_array[indices] = 1
+    id_array = np.cumsum(id_array)
+    shift = max_value * id_array
+
+    # the case when i < j, where i and j are adjacent index at indices
+    I = np.argsort(array + shift)
+    I_end_grp = np.r_[indices[1:], len(array)] - 1
+    global_indices = I[I_end_grp]
+
+    # the case when i == j, where i and j are adjacent index at indices
+    splits = np.r_[indices, len(array)]
+    J = np.where(splits[:-1] == splits[1:])[0]
+    global_indices[J] = indices[J]
+
+    return global_indices
+
+
+def _numpy_argmin_reduceat(array, indices):
+    """
+    a slower vectorizing version (for reference and record only)
+    modified from https://stackoverflow.com/questions/41833740
+    """
+
+    array = np.asarray(array)
+    indices = np.asarray(indices)
+
+    if np.any(np.diff(indices) < 0):
+        msg = "`indices` must be monotonically increasing."
+        raise ValueError(msg)
+
+    max_value = np.max(array) + 1
+
+    # create a shifted array enforcing further argsort operation will
+    # not mixed indices across each segment.
+    id_array = np.zeros(len(array), dtype=np.int64)
+    id_array[indices] = 1
+    id_array = np.cumsum(id_array)
+    shift = max_value * id_array
+
+    # the case when i < j, where i and j are adjacent index at indices
+    I = np.argsort(array + shift, kind="stable")
+    I_start_grp = indices
+    global_indices = I[I_start_grp]
+
+    # the case when i == j, where i and j are adjacent index at indices
+    splits = np.r_[indices, len(array)]
+    J = np.where(splits[:-1] == splits[1:])[0]
+    global_indices[J] = indices[J]
+
+    return global_indices
 
 
 def segmented_sum(x, s_ind, e_ind):
@@ -133,6 +259,33 @@ def segmented_where(x, s_ind, e_ind, values):
     return results
 
 
+def segmented_argmax(x, s_ind, e_ind):
+
+    x = np.array(x)
+    s_ind = np.array(s_ind)
+    e_ind = np.array(e_ind)
+    max_num = x.shape[0]
+
+    if s_ind.shape != e_ind.shape or len(s_ind.shape) != 1:
+        raise ValueError("s_end and e_end must be 1d array.")
+
+    if np.any(s_ind >= max_num) or np.any(e_ind > max_num):
+        raise ValueError(
+            "\n"
+            "s_end must be [ 0, x.shape[axis] )\n"
+            "e_end must be [ 0, x.shape[axis] ]"
+        )
+
+    if np.any((e_ind - s_ind) < 0):
+        raise ValueError("s_ind cannot greater than e_ind")
+
+    x = np.concatenate([x, x[-1:]], axis=0)
+    splits = np.vstack([s_ind, e_ind]).T.flatten()
+
+    results = numpy_argmax_reduceat(x, splits)[::2]
+    return results
+
+
 def segmented_max(x, s_ind, e_ind, return_indices=False):
     """
     Computes the maximum along segments x[s_ind:e_ind, ...]
@@ -166,6 +319,33 @@ def segmented_max(x, s_ind, e_ind, return_indices=False):
     if return_indices:
         max_ind = segmented_where(x, s_ind, e_ind, results)
         return results, max_ind
+    return results
+
+
+def segmented_argmin(x, s_ind, e_ind):
+
+    x = np.array(x)
+    s_ind = np.array(s_ind)
+    e_ind = np.array(e_ind)
+    max_num = x.shape[0]
+
+    if s_ind.shape != e_ind.shape or len(s_ind.shape) != 1:
+        raise ValueError("s_end and e_end must be 1d array.")
+
+    if np.any(s_ind >= max_num) or np.any(e_ind > max_num):
+        raise ValueError(
+            "\n"
+            "s_end must be [ 0, x.shape[axis] )\n"
+            "e_end must be [ 0, x.shape[axis] ]"
+        )
+
+    if np.any((e_ind - s_ind) < 0):
+        raise ValueError("s_ind cannot greater than e_ind")
+
+    x = np.concatenate([x, x[-1:]], axis=0)
+    splits = np.vstack([s_ind, e_ind]).T.flatten()
+
+    results = numpy_argmin_reduceat(x, splits)[::2]
     return results
 
 
