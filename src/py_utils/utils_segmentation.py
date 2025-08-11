@@ -293,33 +293,11 @@ def segmented_max(x, s_ind, e_ind, return_indices=False):
         - max values within each segment
         - (optional) indices of these max values in the original array
     """
-    x = np.array(x)
-    s_ind = np.array(s_ind)
-    e_ind = np.array(e_ind)
-    max_num = x.shape[0]
-
-    if s_ind.shape != e_ind.shape or len(s_ind.shape) != 1:
-        raise ValueError("s_end and e_end must be 1d array.")
-
-    if np.any(s_ind >= max_num) or np.any(e_ind > max_num):
-        raise ValueError(
-            "\n"
-            "s_end must be [ 0, x.shape[axis] )\n"
-            "e_end must be [ 0, x.shape[axis] ]"
-        )
-
-    if np.any((e_ind - s_ind) < 0):
-        raise ValueError("s_ind cannot greater than e_ind")
-
-    x = np.concatenate([x, x[-1:]], axis=0)
-    splits = np.vstack([s_ind, e_ind]).T.flatten()
-
-    results = np.maximum.reduceat(x, splits)[::2]
+    indices = segmented_argmax(x, s_ind, e_ind)
 
     if return_indices:
-        max_ind = segmented_where(x, s_ind, e_ind, results)
-        return results, max_ind
-    return results
+        return x[indices], indices
+    return x[indices]
 
 
 def segmented_argmin(x, s_ind, e_ind):
@@ -356,33 +334,11 @@ def segmented_min(x, s_ind, e_ind, return_indices=False):
         - min values within each segment
         - (optional) indices of these min values in the original array
     """
-    x = np.array(x)
-    s_ind = np.array(s_ind)
-    e_ind = np.array(e_ind)
-    max_num = x.shape[0]
-
-    if s_ind.shape != e_ind.shape or len(s_ind.shape) != 1:
-        raise ValueError("s_end and e_end must be 1d array.")
-
-    if np.any(s_ind >= max_num) or np.any(e_ind > max_num):
-        raise ValueError(
-            "\n"
-            "s_end must be [ 0, x.shape[axis] )\n"
-            "e_end must be [ 0, x.shape[axis] ]"
-        )
-
-    if np.any((e_ind - s_ind) < 0):
-        raise ValueError("s_ind cannot greater than e_ind")
-
-    x = np.concatenate([x, x[-1:]], axis=0)
-    splits = np.vstack([s_ind, e_ind]).T.flatten()
-
-    results = np.minimum.reduceat(x, splits)[::2]
+    indices = segmented_argmin(x, s_ind, e_ind)
 
     if return_indices:
-        min_ind = segmented_where(x, s_ind, e_ind, results)
-        return results, min_ind
-    return results
+        return x[indices], indices
+    return x[indices]
 
 
 def compute_sliding_window_indices(N, window_size, same_size=True):

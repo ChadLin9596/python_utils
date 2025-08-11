@@ -138,13 +138,11 @@ def indices_to_closest_points(camera_points, intrinsic, H, W):
     )
 
     # get the depth and indices from the closest points of each pixel
-    depth, min_indices = utils_segmentation.segmented_min(
+    min_indices = utils_segmentation.segmented_argmin(
         camera_points[sorted_indices][:, 2],
         s_ind=splits[:-1],
         e_ind=splits[1:],
-        return_indices=True,
     )
-    min_indices = np.r_[[i[0] for i in min_indices]]
 
     return sorted_indices[min_indices]
 
