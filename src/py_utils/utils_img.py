@@ -315,7 +315,7 @@ def points_to_point_map(
         output = output + tuple(output_attrs)
 
     if return_details:
-        return *output, details
+        return output + (details,)
 
     if len(output) == 1:
         return output[0]
@@ -369,7 +369,7 @@ def points_to_depth_image(
         output = output + output_attrs
 
     if return_details:
-        return *output, details
+        return output + (details,)
 
     if len(output) == 1:
         return output[0]

@@ -135,14 +135,8 @@ class TestSegmentedOperations(unittest.TestCase):
         e_ind = np.array([2, 3, 3, 7, 8, 8])
 
         expected = np.array([3, 3, 3, 5, 7, 7])
-        expected_indices = [
-            np.array([1]),
-            np.array([1, 2]),
-            np.array([1, 2]),
-            np.array([3]),
-            np.array([7]),
-            np.array([7]),
-        ]
+        expected_indices = np.array([1, 1, 1, 3, 7, 7])
+
         results, indices = utils_segmentation.segmented_max(
             x,
             s_ind,
@@ -161,14 +155,7 @@ class TestSegmentedOperations(unittest.TestCase):
         e_ind = np.array([2, 3, 3, 7, 8, 8])
 
         expected = np.array([2, 2, 3, 1, 1, 7])
-        expected_indices = [
-            np.array([0]),
-            np.array([0]),
-            np.array([1, 2]),
-            np.array([4, 5]),
-            np.array([4, 5]),
-            np.array([7]),
-        ]
+        expected_indices = np.array([0, 0, 1, 4, 4 ,7])
 
         results, indices = utils_segmentation.segmented_min(
             x,
