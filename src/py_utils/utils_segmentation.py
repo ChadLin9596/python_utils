@@ -1,60 +1,6 @@
 import numpy as np
 import warnings
-
-try:
-    from numpy_reduceat_ext import _argmax, _argmin
-
-    numpy_argmax_reduceat = _argmax.argmax_reduceat
-    numpy_argmin_reduceat = _argmin.argmin_reduceat
-
-except:
-    warnings.warn(
-        (
-            "numpy_reduceat_ext C extension not found; "
-            "using slower pure-Python fallback. (~20x slower)"
-        ),
-        RuntimeWarning,
-        stacklevel=2,
-    )
-
-    def numpy_argmax_reduceat(array, indices):
-
-        array = np.asarray(array)
-        indices = np.asarray(indices)
-
-        # splits = np.r_[indices, len(array)]
-        splits = np.append(indices, len(array))
-
-        global_indices = np.empty(len(indices), dtype=np.int64)
-        for n, (i, j) in enumerate(zip(splits[:-1], splits[1:])):
-
-            if i >= j:
-                global_indices[n] = i
-                continue
-
-            k = np.argmax(array[i:j])
-            global_indices[n] = k + i
-
-        return global_indices
-
-    def numpy_argmin_reduceat(array, indices):
-
-        array = np.asarray(array)
-        indices = np.asarray(indices)
-
-        splits = np.r_[indices, len(array)]
-
-        global_indices = []
-        for i, j in zip(splits[:-1], splits[1:]):
-
-            if i >= j:
-                global_indices.append(i)
-                continue
-
-            k = np.argmin(array[i:j])
-            global_indices.append(k + i)
-
-        return np.array(global_indices)
+from numpy_reduceat_ext import numpy_argmax_reduceat, numpy_argmin_reduceat
 
 
 def _numpy_argmax_reduceat(array, indices):
