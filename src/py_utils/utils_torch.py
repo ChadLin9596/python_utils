@@ -234,6 +234,64 @@ def positional_encoding(seq, d, n=10000):
     return pos_encoding
 
 
+def list_frozen_layers(model, prefix="", full_path=False):
+
+    check_module(model)
+
+    results = []
+
+    def dfs(x, prefix):
+
+        if is_all_frozen(x) and full_path:
+            ks = x.state_dict().keys()
+            ks = [prefix + k for k in ks]
+            results.extend(ks)
+            return
+
+        if is_all_frozen(x):
+            results.append(prefix[:-1])
+            return
+
+        if not is_any_frozen(x):
+            return
+
+        # dive into deeper (prefix naming is referred from torch source code)
+        for name, module in x._modules.items():
+            dfs(module, prefix + name + ".")
+
+    dfs(model, prefix)
+    return results
+
+
+def list_unfrozen_layers(model, prefix="", full_path=False):
+
+    check_module(model)
+
+    results = []
+
+    def dfs(x, prefix):
+
+        if is_all_frozen(x):
+            return
+
+        if not is_any_frozen(x) and full_path:
+            ks = x.state_dict().keys()
+            ks = [prefix + k for k in ks]
+            results.extend(ks)
+            return
+
+        if not is_any_frozen(x):
+            results.append(prefix[:-1])
+            return
+
+        # dive into deeper (prefix naming is referred from torch source code)
+        for name, module in x._modules.items():
+            dfs(module, prefix + name + ".")
+
+    dfs(model, prefix)
+    return results
+
+
 class CustomizedLRScheduler(optim.lr_scheduler._LRScheduler):
     """
     TODO: docstring
