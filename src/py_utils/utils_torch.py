@@ -9,9 +9,17 @@ import torch.nn as nn
 import torch.optim as optim
 
 
+def is_module(x):
+    return isinstance(x, nn.Module)
+
+
+def is_tensor(x):
+    return isinstance(x, torch.Tensor)
+
+
 def check_module(x):
 
-    if isinstance(x, nn.Module):
+    if is_module(x):
         return
 
     raise ValueError("Only accept nn.Module input.")
@@ -82,6 +90,7 @@ def get_model_device(model):
 def freeze_model(model):
 
     check_module(model)
+    # will iterate all parameters/modules except buffers
     for param in model.parameters():
         param.requires_grad = False
 
@@ -89,14 +98,21 @@ def freeze_model(model):
 def unfreeze_model(model):
 
     check_module(model)
+    # will iterate all parameters/modules except buffers
     for param in model.parameters():
         param.requires_grad = True
 
 
-def is_all_frozen(model):
+def is_all_frozen(model_or_tensor):
 
-    check_module(model)
-    for param in model.parameters():
+    if is_tensor(model_or_tensor):
+        return not model_or_tensor.requires_grad
+
+    if not is_module(model_or_tensor):
+        raise ValueError("Only accept torch.nn.Module or torch.Tensor input.")
+
+    # iterate all parameters/modules except buffers
+    for param in model_or_tensor.parameters(recurse=True):
         if not param.requires_grad:
             continue
 
@@ -104,10 +120,16 @@ def is_all_frozen(model):
     return True
 
 
-def is_any_frozen(model):
+def is_any_frozen(model_or_tensor):
 
-    check_module(model)
-    for param in model.parameters():
+    if is_tensor(model_or_tensor):
+        return not model_or_tensor.requires_grad
+
+    if not is_module(model_or_tensor):
+        raise ValueError("Only accept torch.nn.Module or torch.Tensor input.")
+
+    # iterate all parameters/modules except buffers
+    for param in model_or_tensor.parameters(recurse=True):
         if param.requires_grad:
             continue
         return True
@@ -135,6 +157,18 @@ def get_grad_required_state(model):
         if not is_any_frozen(x):
             write(x.state_dict(), prefix)
             return
+
+        # checking parameters
+        for name, tensor in x._parameters.items():
+            if is_all_frozen(tensor):
+                continue
+            state[prefix + name] = tensor
+
+        # checking buffers
+        for name, buffer in x._buffers.items():
+            if is_all_frozen(buffer):
+                continue
+            state[prefix + name] = buffer
 
         # dive into deeper (prefix naming is referred from torch source code)
         for name, module in x._modules.items():
@@ -177,6 +211,18 @@ def load_grad_required_state(model, state, verbose=True, return_details=False):
         if not is_any_frozen(x):
             write(x, prefix)
             return
+
+        # checking parameters
+        for name, tensor in x._parameters.items():
+            if is_all_frozen(tensor):
+                continue
+            tensor.copy_(state.pop(prefix + name))
+
+        # checking buffers
+        for name, buffer in x._buffers.items():
+            if is_all_frozen(buffer):
+                continue
+            buffer.copy_(state.pop(prefix + name))
 
         # dive into deeper (prefix naming is referred from torch source code)
         for name, module in x._modules.items():
@@ -255,6 +301,14 @@ def list_frozen_layers(model, prefix="", full_path=False):
         if not is_any_frozen(x):
             return
 
+        for name, tensor in x._parameters.items():
+            if is_all_frozen(tensor):
+                results.append(prefix + name)
+
+        for name, buffer in x._buffers.items():
+            if is_all_frozen(buffer):
+                results.append(prefix + name)
+
         # dive into deeper (prefix naming is referred from torch source code)
         for name, module in x._modules.items():
             dfs(module, prefix + name + ".")
@@ -283,6 +337,14 @@ def list_unfrozen_layers(model, prefix="", full_path=False):
         if not is_any_frozen(x):
             results.append(prefix[:-1])
             return
+
+        for name, tensor in x._parameters.items():
+            if not is_any_frozen(tensor):
+                results.append(prefix + name)
+
+        for name, buffer in x._buffers.items():
+            if not is_any_frozen(buffer):
+                results.append(prefix + name)
 
         # dive into deeper (prefix naming is referred from torch source code)
         for name, module in x._modules.items():
