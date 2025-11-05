@@ -566,3 +566,24 @@ def update_intrinsics_by_resized(K, orig_shape, resized_shape):
     K_resized[1, 2] *= scale_y  # cy'
 
     return K_resized
+
+
+def update_intrinsics_by_center_crop(K, orig_shape, resized_shape):
+
+    orig_h, orig_w = orig_shape[:2]
+    new_h, new_w = resized_shape[:2]
+
+    if new_h > orig_h or new_w > orig_w:
+        raise ValueError(
+            "Center crop requires resized dimensions "
+            "to be no larger than the original."
+        )
+
+    offset_y = orig_h // 2 - new_h // 2
+    offset_x = orig_w // 2 - new_w // 2
+
+    K_cropped = K.copy()
+    K_cropped[0, 2] -= offset_x
+    K_cropped[1, 2] -= offset_y
+
+    return K_cropped
