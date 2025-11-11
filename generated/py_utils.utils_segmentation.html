@@ -32,8 +32,50 @@
       <div class="content" role="main">
         
         
-  <div class="section" id="py-utils-utils-segmentation">
-<h1>py_utils.utils_segmentation<a class="headerlink" href="#py-utils-utils-segmentation" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-py_utils.utils_segmentation">
+<span id="py-utils-utils-segmentation"></span><h1>py_utils.utils_segmentation<a class="headerlink" href="#module-py_utils.utils_segmentation" title="Permalink to this headline">¶</a></h1>
+<p class="rubric">Functions</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_sliding_window_indices</span></code>(N, window_size)</p></td>
+<td><p>Compute start and end indices for sliding windows over a sequence of length <cite>N</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_sliding_window_indices_with_overlap</span></code>(N, …)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">segmented_argmax</span></code>(x, s_ind, e_ind)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">segmented_argmin</span></code>(x, s_ind, e_ind)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">segmented_count</span></code>(x, s_ind, e_ind)</p></td>
+<td><p>Counts the number of elements along segments x[s_ind:e_ind]</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">segmented_max</span></code>(x, s_ind, e_ind[, return_indices])</p></td>
+<td><p>Computes the maximum along segments x[s_ind:e_ind, …] :returns:</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">segmented_mean</span></code>(x, s_ind, e_ind)</p></td>
+<td><p>Computes the average along segments x[s_ind:e_ind, …]</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">segmented_min</span></code>(x, s_ind, e_ind[, return_indices])</p></td>
+<td><p>Computes the minimum along segments x[s_ind:e_ind, …] :returns:</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../usage.html#py_utils.utils_segmentation.segmented_sum" title="py_utils.utils_segmentation.segmented_sum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">segmented_sum</span></code></a>(x, s_ind, e_ind)</p></td>
+<td><p>Computes the summation along segments x[s_ind:e_ind, …]</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">segmented_where</span></code>(x, s_ind, e_ind, values)</p></td>
+<td><p>TODO: add docstring</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sliding_window</span></code>(x[, window_size, same_size, …])</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
 </div>
 
 
