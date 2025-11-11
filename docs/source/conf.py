@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -29,6 +30,17 @@ extensions = [
 
 templates_path = ["_templates"]
 exclude_patterns = []
+
+autodoc_mock_imports = [
+    "torch",
+    "torchvision",
+    "cv2",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pandas",
+    "skimage",
+]
 
 
 # -- Options for HTML output -------------------------------------------------
