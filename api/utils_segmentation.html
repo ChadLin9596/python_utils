@@ -1,0 +1,327 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>py_utils.utils_segmentation &#8212; py_utils 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="API Reference" href="index.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>py_utils 0.1.0 documentation</span></a></h1>
+        <h2 class="heading"><span>py_utils.utils_segmentation</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">API Reference</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <div class="section" id="module-py_utils.utils_segmentation">
+<span id="py-utils-utils-segmentation"></span><h1>py_utils.utils_segmentation<a class="headerlink" href="#module-py_utils.utils_segmentation" title="Permalink to this headline">¶</a></h1>
+<p>Segmentation related utility functions.</p>
+<p>The functions in this module generally assume that <cite>s_ind</cite> and
+<cite>e_ind</cite> are 1D arrays of the same length, and that for each i,
+<cite>s_ind[i] &lt;= e_ind[i]</cite>. The segmented operations can be treated as
+numpy.ufunc.reduceat with custom started and ended indices. See:
+(<a class="reference external" href="https://numpy.org/doc/1.26/reference/generated/numpy.ufunc.reduceat.html">https://numpy.org/doc/1.26/reference/generated/numpy.ufunc.reduceat.html</a>)</p>
+<dl class="simple">
+<dt>Dependency:</dt><dd><ul class="simple">
+<li><p>numpy_reduceat_ext</p></li>
+<li><p>numpy</p></li>
+</ul>
+</dd>
+</dl>
+<div class="section" id="sliding-window-utilities">
+<h2>Sliding Window Utilities<a class="headerlink" href="#sliding-window-utilities" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="py_utils.utils_segmentation.compute_sliding_window_indices">
+<code class="sig-prename descclassname">py_utils.utils_segmentation.</code><code class="sig-name descname">compute_sliding_window_indices</code><span class="sig-paren">(</span><em class="sig-param">N</em>, <em class="sig-param">window_size</em>, <em class="sig-param">same_size=True</em><span class="sig-paren">)</span><a class="headerlink" href="#py_utils.utils_segmentation.compute_sliding_window_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute start and end indices for sliding windows over
+a sequence of length <cite>N</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>N</strong> (<em>int</em>) – The length of the sequence over which sliding windows are computed.</p></li>
+<li><p><strong>window_size</strong> (<em>int</em>) – The size of each sliding window.</p></li>
+<li><p><strong>same_size</strong> (<em>bool</em><em>, </em><em>optional</em>) – <ul>
+<li><p>(True) only full-sized windows are returned.</p></li>
+<li><p>(False) partial windows near the boundaries are included as well.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>s_ind</strong> (<em>np.ndarray of int</em>) – The array of start indices for each window.</p></li>
+<li><p><strong>e_ind</strong> (<em>np.ndarray of int</em>) – The array of end indices for each window (exclusive).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s_ind</span><span class="p">,</span> <span class="n">e_ind</span> <span class="o">=</span> <span class="n">compute_sliding_window_indices</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">same_size</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">s_ind: [0, 1, 2]</span>
+<span class="go">e_ind: [3, 4, 5]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s_ind</span><span class="p">,</span> <span class="n">e_ind</span> <span class="o">=</span> <span class="n">compute_sliding_window_indices</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">same_size</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">s_ind: [0, 1]</span>
+<span class="go">e_ind: [4, 5]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s_ind</span><span class="p">,</span> <span class="n">e_ind</span> <span class="o">=</span> <span class="n">compute_sliding_window_indices</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">same_size</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">s_ind: []</span>
+<span class="go">e_ind: []</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s_ind</span><span class="p">,</span> <span class="n">e_ind</span> <span class="o">=</span> <span class="n">compute_sliding_window_indices</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">same_size</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">s_ind:           [0, 0, 1, 2, 3]</span>
+<span class="go">e_ind:           [2, 3, 4, 5, 5]</span>
+<span class="go">-&gt; segment_size: [2, 3, 3, 3, 2]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s_ind</span><span class="p">,</span> <span class="n">e_ind</span> <span class="o">=</span> <span class="n">compute_sliding_window_indices</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">same_size</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">s_ind:           [0, 0, 0, 1, 2, 3]</span>
+<span class="go">e_ind:           [2, 3, 4, 5, 5, 5]</span>
+<span class="go">-&gt; segment_size: [2, 3, 4, 4, 3, 2]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s_ind</span><span class="p">,</span> <span class="n">e_ind</span> <span class="o">=</span> <span class="n">compute_sliding_window_indices</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">same_size</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">s_ind:           [0, 0, 0, 0, 1, 2]</span>
+<span class="go">e_ind:           [3, 4, 5, 5, 5, 5]</span>
+<span class="go">-&gt; segment_size: [3, 4, 5, 5, 4, 3]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="py_utils.utils_segmentation.sliding_window">
+<code class="sig-prename descclassname">py_utils.utils_segmentation.</code><code class="sig-name descname">sliding_window</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">window_size=3</em>, <em class="sig-param">same_size=False</em>, <em class="sig-param">method='mean'</em><span class="sig-paren">)</span><a class="headerlink" href="#py_utils.utils_segmentation.sliding_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply sliding window operation on 1D array <cite>x</cite>. <cite>window_size</cite> &amp;
+<cite>same_size</cite> control the sliding window indices, see
+<cite>compute_sliding_window_indices</cite> for details. <cite>method</cite> specifies
+the aggregation method within each window.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray of shape</em><em> (</em><em>N</em><em>,</em><em>)</em>) – The input 1D array.</p></li>
+<li><p><strong>window_size</strong> (<em>int</em><em>, </em><em>optional</em>) – </p></li>
+<li><p><strong>same_size</strong> (<em>bool</em><em>, </em><em>optional</em>) – </p></li>
+<li><p><strong>method</strong> (<em>str</em><em>, </em><em>optional</em>) – <ul>
+<li><p>“argmin”: index of minimum</p></li>
+<li><p>”argmax”: index of maximum</p></li>
+<li><p>”max”: maximum</p></li>
+<li><p>”min”: minimum</p></li>
+<li><p>”count”: count of elements</p></li>
+<li><p>”sum”: summation</p></li>
+<li><p>”mean”: average</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="segmented-reduction-utilities">
+<h2>Segmented Reduction Utilities<a class="headerlink" href="#segmented-reduction-utilities" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="py_utils.utils_segmentation.segmented_argmin">
+<code class="sig-prename descclassname">py_utils.utils_segmentation.</code><code class="sig-name descname">segmented_argmin</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">s_ind</em>, <em class="sig-param">e_ind</em><span class="sig-paren">)</span><a class="headerlink" href="#py_utils.utils_segmentation.segmented_argmin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the argmin along segments x[s_ind:e_ind, …]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – </p></li>
+<li><p><strong>s_ind</strong> (<em>np.ndarray of int</em>) – The array of start indices for each window.</p></li>
+<li><p><strong>e_ind</strong> (<em>np.ndarray of int</em>) – The array of end indices for each window (exclusive).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray of int pointing global indices of x</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="py_utils.utils_segmentation.segmented_argmax">
+<code class="sig-prename descclassname">py_utils.utils_segmentation.</code><code class="sig-name descname">segmented_argmax</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">s_ind</em>, <em class="sig-param">e_ind</em><span class="sig-paren">)</span><a class="headerlink" href="#py_utils.utils_segmentation.segmented_argmax" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the argmax along segments x[s_ind:e_ind]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – </p></li>
+<li><p><strong>s_ind</strong> (<em>np.ndarray of int</em>) – The array of start indices for each window.</p></li>
+<li><p><strong>e_ind</strong> (<em>np.ndarray of int</em>) – The array of end indices for each window (exclusive).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray of int pointing global indices of x</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="py_utils.utils_segmentation.segmented_min">
+<code class="sig-prename descclassname">py_utils.utils_segmentation.</code><code class="sig-name descname">segmented_min</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">s_ind</em>, <em class="sig-param">e_ind</em>, <em class="sig-param">return_indices=False</em><span class="sig-paren">)</span><a class="headerlink" href="#py_utils.utils_segmentation.segmented_min" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the minimum along segments x[s_ind:e_ind, …]
+:returns:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>min values within each segment</p></li>
+<li><p>(optional) indices of these min values in the original array</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="py_utils.utils_segmentation.segmented_max">
+<code class="sig-prename descclassname">py_utils.utils_segmentation.</code><code class="sig-name descname">segmented_max</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">s_ind</em>, <em class="sig-param">e_ind</em>, <em class="sig-param">return_indices=False</em><span class="sig-paren">)</span><a class="headerlink" href="#py_utils.utils_segmentation.segmented_max" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the maximum along segments x[s_ind:e_ind, …]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – </p></li>
+<li><p><strong>s_ind</strong> (<em>np.ndarray of int</em>) – The array of start indices for each window.</p></li>
+<li><p><strong>e_ind</strong> (<em>np.ndarray of int</em>) – The array of end indices for each window (exclusive).</p></li>
+<li><p><strong>return_indices</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to return the correspoinding indices in the original
+array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>np.ndarray</em></p></li>
+<li><p><em>(optional) indices of these max values in the original array</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="py_utils.utils_segmentation.segmented_count">
+<code class="sig-prename descclassname">py_utils.utils_segmentation.</code><code class="sig-name descname">segmented_count</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">s_ind</em>, <em class="sig-param">e_ind</em><span class="sig-paren">)</span><a class="headerlink" href="#py_utils.utils_segmentation.segmented_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Counts the number of elements along segments x[s_ind:e_ind].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – The input array. (for checking max length of s_ind and e_ind)</p></li>
+<li><p><strong>s_ind</strong> (<em>np.ndarray of int</em>) – The array of start indices for each window.</p></li>
+<li><p><strong>e_ind</strong> (<em>np.ndarray of int</em>) – The array of end indices for each window (exclusive).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>a numpy ndarray</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s_ind</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_ind</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">segmented_count</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">e_ind</span><span class="p">)</span>
+<span class="go">array([3, 3, 2])</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s_ind</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_ind</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">segmented_count</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">e_ind</span><span class="p">)</span>
+<span class="go">array([1, 1, 2])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="py_utils.utils_segmentation.segmented_sum">
+<code class="sig-prename descclassname">py_utils.utils_segmentation.</code><code class="sig-name descname">segmented_sum</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">s_ind</em>, <em class="sig-param">e_ind</em><span class="sig-paren">)</span><a class="headerlink" href="#py_utils.utils_segmentation.segmented_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the summation along segments x[s_ind:e_ind, …]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>a numpy ndarray</em>) – </p></li>
+<li><p><strong>s_ind</strong> (<em>a 1d array</em><em> (</em><em>n</em><em>,</em><em>)</em>) – </p></li>
+<li><p><strong>e_ind</strong> (<em>a 1d array</em><em> (</em><em>n</em><em>,</em><em>)</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>a numpy ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="py_utils.utils_segmentation.segmented_mean">
+<code class="sig-prename descclassname">py_utils.utils_segmentation.</code><code class="sig-name descname">segmented_mean</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">s_ind</em>, <em class="sig-param">e_ind</em><span class="sig-paren">)</span><a class="headerlink" href="#py_utils.utils_segmentation.segmented_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the average along segments x[s_ind:e_ind, …]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>a numpy ndarray</em>) – </p></li>
+<li><p><strong>s_ind</strong> (<em>a 1d array</em><em> (</em><em>n</em><em>,</em><em>)</em>) – </p></li>
+<li><p><strong>e_ind</strong> (<em>a 1d array</em><em> (</em><em>n</em><em>,</em><em>)</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>a numpy ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="py_utils.utils_segmentation.segmented_where">
+<code class="sig-prename descclassname">py_utils.utils_segmentation.</code><code class="sig-name descname">segmented_where</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">s_ind</em>, <em class="sig-param">e_ind</em>, <em class="sig-param">values</em><span class="sig-paren">)</span><a class="headerlink" href="#py_utils.utils_segmentation.segmented_where" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the indices where x[s_ind:e_ind] == values within each segment.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">API Reference</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2025, Chad Lin.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>
