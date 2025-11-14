@@ -1,5 +1,18 @@
+"""
+Segmentation related utility functions.
+
+The functions in this module generally assume that `s_ind` and
+`e_ind` are 1D arrays of the same length, and that for each i,
+`s_ind[i] <= e_ind[i]`. The segmented operations can be treated as
+numpy.ufunc.reduceat with custom started and ended indices. See:
+(https://numpy.org/doc/1.26/reference/generated/numpy.ufunc.reduceat.html)
+
+Dependency:
+    - numpy_reduceat_ext
+    - numpy
+"""
+
 import numpy as np
-import warnings
 from numpy_reduceat_ext import numpy_argmax_reduceat, numpy_argmin_reduceat
 
 
@@ -123,17 +136,34 @@ def segmented_sum(x, s_ind, e_ind):
 
 def segmented_count(x, s_ind, e_ind):
     """
-    Counts the number of elements along segments x[s_ind:e_ind]
+    Counts the number of elements along segments x[s_ind:e_ind].
 
     Parameters
     ----------
-    x : a numpy ndarray
-    s_ind : a 1d array (n,)
-    e_ind : a 1d array (n,)
+    x : np.ndarray
+        The input array. (for checking max length of s_ind and e_ind)
+    s_ind : np.ndarray of int
+        The array of start indices for each window.
+    e_ind : np.ndarray of int
+        The array of end indices for each window (exclusive).
 
     Return
     ------
     a numpy ndarray
+
+    Examples
+    --------
+    >>> x = [1, 2, 4, 8]
+    >>> s_ind = [0, 1, 2]
+    >>> e_ind = [3, 4, 4]
+    >>> segmented_count(x, s_ind, e_ind)
+    array([3, 3, 2])
+
+    >>> x = [1, 2, 4, 8]
+    >>> s_ind = [0, 1, 2]
+    >>> e_ind = [1, 1, 4]
+    >>> segmented_count(x, s_ind, e_ind)
+    array([1, 1, 2])
     """
     x = np.array(x)
     s_ind = np.array(s_ind)
@@ -184,7 +214,7 @@ def segmented_mean(x, s_ind, e_ind):
 
 def segmented_where(x, s_ind, e_ind, values):
     """
-    TODO: add docstring
+    Computes the indices where x[s_ind:e_ind] == values within each segment.
     """
     x = np.asarray(x)
     s_ind = np.asarray(s_ind)
@@ -206,6 +236,21 @@ def segmented_where(x, s_ind, e_ind, values):
 
 
 def segmented_argmax(x, s_ind, e_ind):
+    """
+    Computes the argmax along segments x[s_ind:e_ind]
+
+    Parameters
+    ----------
+    x : np.ndarray
+    s_ind : np.ndarray of int
+        The array of start indices for each window.
+    e_ind : np.ndarray of int
+        The array of end indices for each window (exclusive).
+
+    Return
+    ------
+    np.ndarray of int pointing global indices of x
+    """
 
     x = np.array(x)
     s_ind = np.array(s_ind)
@@ -235,9 +280,22 @@ def segmented_argmax(x, s_ind, e_ind):
 def segmented_max(x, s_ind, e_ind, return_indices=False):
     """
     Computes the maximum along segments x[s_ind:e_ind, ...]
-    Returns:
-        - max values within each segment
-        - (optional) indices of these max values in the original array
+
+    Parameters
+    ----------
+    x : np.ndarray
+    s_ind : np.ndarray of int
+        The array of start indices for each window.
+    e_ind : np.ndarray of int
+        The array of end indices for each window (exclusive).
+    return_indices : bool, optional
+        Whether to return the correspoinding indices in the original
+        array.
+
+    Return
+    ------
+    np.ndarray
+    (optional) indices of these max values in the original array
     """
     indices = segmented_argmax(x, s_ind, e_ind)
 
@@ -247,6 +305,21 @@ def segmented_max(x, s_ind, e_ind, return_indices=False):
 
 
 def segmented_argmin(x, s_ind, e_ind):
+    """
+    Computes the argmin along segments x[s_ind:e_ind, ...]
+
+    Parameters
+    ----------
+    x : np.ndarray
+    s_ind : np.ndarray of int
+        The array of start indices for each window.
+    e_ind : np.ndarray of int
+        The array of end indices for each window (exclusive).
+
+    Return
+    ------
+    np.ndarray of int pointing global indices of x
+    """
 
     x = np.array(x)
     s_ind = np.array(s_ind)
@@ -299,8 +372,8 @@ def compute_sliding_window_indices(N, window_size, same_size=True):
     window_size : int
         The size of each sliding window.
     same_size : bool, optional
-        (True) only full-sized windows are returned.
-        (False) partial windows near the boundaries are included as well.
+        * (True) only full-sized windows are returned.
+        * (False) partial windows near the boundaries are included as well.
 
     Returns
     -------
@@ -311,29 +384,29 @@ def compute_sliding_window_indices(N, window_size, same_size=True):
 
     Examples
     --------
-    >>> compute_sliding_window_indices(5, 3, same_size=True)
+    >>> s_ind, e_ind = compute_sliding_window_indices(5, 3, same_size=True)
     s_ind: [0, 1, 2]
     e_ind: [3, 4, 5]
 
-    >>> compute_sliding_window_indices(5, 4, same_size=True)
+    >>> s_ind, e_ind = compute_sliding_window_indices(5, 4, same_size=True)
     s_ind: [0, 1]
     e_ind: [4, 5]
 
-    >>> compute_sliding_window_indices(5, 6, same_size=True)
+    >>> s_ind, e_ind = compute_sliding_window_indices(5, 6, same_size=True)
     s_ind: []
     e_ind: []
 
-    >>> compute_sliding_window_indices(5, 3, same_size=False)
+    >>> s_ind, e_ind = compute_sliding_window_indices(5, 3, same_size=False)
     s_ind:           [0, 0, 1, 2, 3]
     e_ind:           [2, 3, 4, 5, 5]
     -> segment_size: [2, 3, 3, 3, 2]
 
-    >>> compute_sliding_window_indices(5, 4, same_size=False)
+    >>> s_ind, e_ind = compute_sliding_window_indices(5, 4, same_size=False)
     s_ind:           [0, 0, 0, 1, 2, 3]
     e_ind:           [2, 3, 4, 5, 5, 5]
     -> segment_size: [2, 3, 4, 4, 3, 2]
 
-    >>> compute_sliding_window_indices(5, 6, same_size=False)
+    >>> s_ind, e_ind = compute_sliding_window_indices(5, 6, same_size=False)
     s_ind:           [0, 0, 0, 0, 1, 2]
     e_ind:           [3, 4, 5, 5, 5, 5]
     -> segment_size: [3, 4, 5, 5, 4, 3]
@@ -382,6 +455,30 @@ def compute_sliding_window_indices_with_overlap(
 
 
 def sliding_window(x, window_size=3, same_size=False, method="mean"):
+    """
+    Apply sliding window operation on 1D array `x`. `window_size` &
+    `same_size` control the sliding window indices, see
+    `compute_sliding_window_indices` for details. `method` specifies
+    the aggregation method within each window.
+
+    Parameters
+    ----------
+    x : np.ndarray of shape (N,)
+        The input 1D array.
+
+    window_size : int, optional
+
+    same_size : bool, optional
+
+    method : str, optional
+        - "argmin": index of minimum
+        - "argmax": index of maximum
+        - "max": maximum
+        - "min": minimum
+        - "count": count of elements
+        - "sum": summation
+        - "mean": average
+    """
 
     func_map = {
         "sum": segmented_sum,
@@ -389,6 +486,8 @@ def sliding_window(x, window_size=3, same_size=False, method="mean"):
         "mean": segmented_mean,
         "max": segmented_max,
         "min": segmented_min,
+        "argmax": segmented_argmax,
+        "argmin": segmented_argmin,
     }
 
     if method not in func_map:
