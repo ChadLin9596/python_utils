@@ -568,6 +568,15 @@ def update_intrinsics_by_resized(K, orig_shape, resized_shape):
     return K_resized
 
 
+def update_intrinsics_by_crop(K, crop_top, crop_left):
+
+    K_cropped = K.copy()
+    K_cropped[0, 2] -= crop_left
+    K_cropped[1, 2] -= crop_top
+
+    return K_cropped
+
+
 def update_intrinsics_by_center_crop(K, orig_shape, resized_shape):
 
     orig_h, orig_w = orig_shape[:2]
@@ -582,8 +591,4 @@ def update_intrinsics_by_center_crop(K, orig_shape, resized_shape):
     offset_y = orig_h // 2 - new_h // 2
     offset_x = orig_w // 2 - new_w // 2
 
-    K_cropped = K.copy()
-    K_cropped[0, 2] -= offset_x
-    K_cropped[1, 2] -= offset_y
-
-    return K_cropped
+    return update_intrinsics_by_crop(K, offset_y, offset_x)
