@@ -4,6 +4,7 @@ import sys
 
 import numpy as np
 import requests
+import scipy.spatial.transform
 
 
 def is_connect_to_network(url="https://www.google.com", timeout=5):
@@ -220,6 +221,44 @@ def R_to_euler(R):
     z[singular] = 0
 
     return np.stack([x, y, z], axis=-1)
+
+
+def R_to_Q(R):
+
+    _valid_shape_rotation_matrix(R)
+    # scipy's Rotation class uses (x, y, z, w) format for quaternions
+    return scipy.spatial.transform.Rotation.from_matrix(R).as_quat()
+
+
+def sample_from_trajectory(
+    xyz,
+    qxyzw,
+    delta_pos=1.5,  # meter
+    delta_angle=np.deg2rad(2),  # radian
+):
+
+    assert len(xyz) == len(qxyzw)
+
+    R = Q_to_R(qxyzw)
+
+    sampled_idx = [0]
+    last_pos = xyz[0]
+    last_R = R[0]
+
+    for i in range(1, len(xyz)):
+        d_pos = np.linalg.norm(xyz[i] - last_pos)
+        dR = last_R.T @ R[i]
+        d_angle = np.arccos(R_to_Q(dR)[-1]) * 2
+
+        if d_pos >= delta_pos or d_angle >= delta_angle:
+            sampled_idx.append(i)
+            last_pos = xyz[i]
+            last_R = R[i]
+
+    if sampled_idx[-1] != len(xyz) - 1:
+        sampled_idx.append(len(xyz) - 1)
+
+    return np.array(sampled_idx)
 
 
 def _valid_shape_rotation_matrix(R):
