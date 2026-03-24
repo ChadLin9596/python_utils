@@ -40,6 +40,7 @@ class VoxelGrid:
     In this implementation, the origin of the grid is aligned with
     the vertices of the voxels, rather than their centers.
 
+    ```
                 *----*----*----*
                /    /    /    /|
               /    /    /    / *
@@ -49,7 +50,7 @@ class VoxelGrid:
     (0, 0, 0) -> *----*----* /
                  |    |    |/
                  *----*----*
-
+    ```
     """
 
     def __init__(self, points, voxel_size=[0.5, 0.5, 0.5], attributes=[]):
@@ -159,6 +160,10 @@ class VoxelGrid:
 
 
 def unique_pcd(pcd_arr, voxel_size=0.2, return_indices=False):
+    """
+    Assume `pcd_arr` is a structured array with at least 'center' field.
+    Remove points that fall into the same voxel.
+    """
 
     pcd_indices = pcd_arr["center"] // voxel_size
     pcd_indices = pcd_indices.astype(np.int64)
@@ -174,20 +179,35 @@ def unique_pcd(pcd_arr, voxel_size=0.2, return_indices=False):
     return pcd_arr
 
 
-def subtract_pcds(pcd_a, pcd_b, voxel_size=0.2, return_mask=False):
+def _subtract_voxel_indices(voxel_a, voxel_b):
 
-    pcd_a_indices = (pcd_a["center"] // voxel_size).astype(np.int64)
-    pcd_b_indices = (pcd_b["center"] // voxel_size).astype(np.int64)
+    voxel_a = voxel_a.astype(np.int64)
+    voxel_b = voxel_b.astype(np.int64)
 
     # Use view-based conversion for efficient comparison
     def to_unique_1d(array):
         return array.view([("", array.dtype)] * array.shape[1]).ravel()
 
-    a_voxel_keys = to_unique_1d(pcd_a_indices)
-    b_voxel_keys = to_unique_1d(pcd_b_indices)
+    a_voxel_keys = to_unique_1d(voxel_a)
+    b_voxel_keys = to_unique_1d(voxel_b)
 
     # keys in 'a' but not in 'b'
     keep_mask = ~np.isin(a_voxel_keys, b_voxel_keys)
+    return keep_mask
+
+
+def subtract_pcds(pcd_a, pcd_b, voxel_size=0.2, return_mask=False):
+    """
+    Assume `pcd_a` and `pcd_b` are structured arrays with at least
+    'center' field. Remove points in `pcd_a` that fall into the same
+    voxel as points in `pcd_b`.
+    """
+
+    pcd_a_indices = (pcd_a["center"] // voxel_size).astype(np.int64)
+    pcd_b_indices = (pcd_b["center"] // voxel_size).astype(np.int64)
+
+    keep_mask = _subtract_voxel_indices(pcd_a_indices, pcd_b_indices)
+
     if return_mask:
         return pcd_a[keep_mask], keep_mask
     return pcd_a[keep_mask]
