@@ -144,6 +144,23 @@ def A_occupied_by_B(
     return mask
 
 
+@torch.no_grad()
+def A_occupied_by_B_key(
+    A: ME.SparseTensor,
+    B: ME.CoordinateMapKey,
+):
+    mask = torch.zeros(len(A), dtype=torch.bool, device=A.device)
+    a_idx = _A_occupied_by_B(
+        A.coordinate_map_key,
+        B,
+        A.coordinate_manager,
+        device=A.device,
+    )
+    mask[a_idx] = True
+
+    return mask
+
+
 ##################
 # SET OPERATIONS #
 ##################
@@ -196,3 +213,11 @@ def set_disjoint_union(A: ME.SparseTensor, B: ME.SparseTensor):
         coordinate_manager=A.coordinate_manager,
     )
     return out
+
+
+@torch.no_grad()
+def append_unique_coords(A, B) -> ME.SparseTensor:
+
+    C = set_difference(B, A)
+    R = set_disjoint_union(A, C)
+    return R
