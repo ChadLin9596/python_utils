@@ -39,8 +39,11 @@ def seed_everything(seed=42, verbose=False):
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    torch.use_deterministic_algorithms(True)
 
     if verbose:
         print(f"Seed set to: {seed} (type: {type(seed)})")

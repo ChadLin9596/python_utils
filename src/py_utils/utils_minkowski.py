@@ -101,32 +101,42 @@ def sparse_tensor_map(
 
 
 @torch.no_grad()
-def A_occupied_by_B(
-    A: ME.SparseTensor,
-    B: ME.SparseTensor | ME.CoordinateMapKey,
+def _A_occupied_by_B(
+    A: ME.CoordinateMapKey,
+    B: ME.CoordinateMapKey,
+    coordinate_manager: ME.CoordinateManager,
+    device="cuda",
 ):
-    cm = A.coordinate_manager
-
-    if isinstance(B, ME.SparseTensor):
-        strided_B_key = cm.stride(B.coordinate_map_key, A.tensor_stride)
-    elif isinstance(B, ME.CoordinateMapKey):
-        strided_B_key = cm.stride(B, A.tensor_stride)
-    else:
-        msg = "B must be either a SparseTensor or CoordinateMapKey."
-        raise ValueError(msg)
-
-    mask = torch.zeros(len(A), dtype=torch.bool, device=A.device)
-
-    if cm.size(strided_B_key) == 0:
-        return mask
 
     # only the exact match (kernel_size=1) is needed to determine occupancy
     kg = get_cube_kernel_generator(kernel_size=1)
     a_idx, _ = _sparse_tensor_key_map(
-        A.coordinate_map_key,
-        strided_B_key,
+        A,
+        B,
         kg,
-        cm,
+        coordinate_manager,
+        device=device,
+    )
+    return a_idx
+
+
+@torch.no_grad()
+def A_occupied_by_B(
+    A: ME.SparseTensor,
+    B: ME.SparseTensor,
+):
+
+    if A.coordinate_manager is not B.coordinate_manager:
+        raise ValueError("A and B must share the same coordinate_manager.")
+
+    if A.tensor_stride != B.tensor_stride:
+        raise ValueError("A and B must have the same tensor_stride.")
+
+    mask = torch.zeros(len(A), dtype=torch.bool, device=A.device)
+    a_idx = _A_occupied_by_B(
+        A.coordinate_map_key,
+        B.coordinate_map_key,
+        A.coordinate_manager,
         device=A.device,
     )
     mask[a_idx] = True
@@ -149,6 +159,9 @@ def set_difference(A: ME.SparseTensor, B: ME.SparseTensor):
     if not torch.any(occupied):
         return A
 
+    if torch.all(occupied):
+        return None  # A - B is empty; avoid constructing 0-voxel SparseTensor
+
     keep = ~occupied
 
     out = ME.SparseTensor(
@@ -164,7 +177,17 @@ def set_difference(A: ME.SparseTensor, B: ME.SparseTensor):
 def set_disjoint_union(A: ME.SparseTensor, B: ME.SparseTensor):
     """A U B, assume A and B don't have intersection"""
 
+    if B is None:
+        return A
+    if A is None:
+        return B
+
     assert A.tensor_stride == B.tensor_stride, "tensor_stride mismatch"
+
+    if len(B) == 0:
+        return A
+    if len(A) == 0:
+        return B
 
     out = ME.SparseTensor(
         features=torch.cat([A.F, B.F], dim=0),
