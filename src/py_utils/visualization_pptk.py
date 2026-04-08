@@ -400,3 +400,56 @@ def plot_matching_result(
         (np.vstack(after_xyzs), np.vstack(after_colors)),
     )
     return v
+
+
+####################
+# Camera Utilities #
+####################
+
+
+def estimate_viewer_params(extrinsic, intrinsic, H, W, distance=1.0):
+
+    # TODO: radius is a little bit shorter based on visualization,
+    # need to check the reason. 
+
+    fx = float(intrinsic[0, 0])
+    fy = float(intrinsic[1, 1])
+    cx = float(intrinsic[0, 2])
+    cy = float(intrinsic[1, 2])
+    cen_x = W / 2.0
+    cen_y = H / 2.0
+
+    # 3d points correspond to the center of the image plane
+    lookat = np.array(
+        [
+            (cen_x - cx) * distance / fx,
+            (cen_y - cy) * distance / fy,
+            distance,
+        ],
+    )
+
+    R = extrinsic[:3, :3]
+    t = extrinsic[:3, 3]
+    lookat = lookat @ R.T + t
+
+    vec_lookat_to_cam = t - lookat
+    vec_x, vec_y, vec_z = vec_lookat_to_cam
+    dist_vec_xy = np.sqrt(vec_x**2 + vec_y**2)
+
+    # azimuthal angle
+    phi = np.arctan2(vec_y, vec_x)
+
+    # elevation angle
+    theta = np.arctan2(vec_z, dist_vec_xy)
+
+    # radius
+    r = np.sqrt(np.sum(vec_lookat_to_cam**2))
+
+    results = {
+        "phi": phi,
+        "theta": theta,
+        "r": r,
+        "lookat": lookat,
+    }
+
+    return results
