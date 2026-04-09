@@ -37,6 +37,7 @@ def seed_everything(seed=42, verbose=False):
     """
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
