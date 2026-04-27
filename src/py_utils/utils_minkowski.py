@@ -1,5 +1,8 @@
+import math
 import torch
+import torch.nn as nn
 import MinkowskiEngine as ME
+from . import utils_torch
 
 ####################
 # KERNEL GENERATOR #
@@ -221,3 +224,109 @@ def append_unique_coords(A, B) -> ME.SparseTensor:
     C = set_difference(B, A)
     R = set_disjoint_union(A, C)
     return R
+
+
+###############
+# TRANSFORMER #
+###############
+
+
+def scaled_dot_product_attention(Q, K, V, Q_idx, K_idx, n_queries):
+    """
+    Q:     (Na, H, dh)
+    K:     (Nb, H, dh)
+    V:     (Nb, H, dv)
+    Q_idx: (E,) int64, edge indices into Q (query side)
+    K_idx: (E,) int64, edge indices into K/V (key/value side)
+    returns: (Na, H, dv)
+    """
+    E = Q_idx.shape[0]
+    H = Q.shape[1]
+    D = V.shape[-1]
+
+    logits = (Q[Q_idx] * K[K_idx]).sum(-1) / math.sqrt(Q.shape[-1])  # (E, H)
+    logits = logits.reshape(-1)  # (EH,)
+
+    h_idx = torch.arange(H, device=Q.device)
+
+    # (E, 1) * scalar + (1, H) -> (E, H)
+    groups = Q_idx[:, None] * H + h_idx
+    groups = groups.reshape(-1)  # (EH,)
+
+    weights = utils_torch.segmented_softmax(logits, groups, n_queries * H)
+    weights = weights.reshape(E, H)  # (E, H)
+
+    out = torch.zeros((n_queries, H, D), device=Q.device, dtype=Q.dtype)
+    out = torch.scatter_reduce(
+        input=out,
+        dim=0,
+        # (E,) -> (E, 1, 1) -> (E, H, D)
+        index=Q_idx[:, None, None].expand(-1, H, D),
+        # (E, H) -> (E, H, 1) * (E, H, D)
+        src=weights[..., None] * V[K_idx],
+        reduce="sum",
+        include_self=True,
+    )
+    return out
+
+
+class MultiHeadAttention(nn.Module):
+
+    def __init__(self, ca: int, cb: int, d: int, n_heads=1):
+        super().__init__()
+        assert d % n_heads == 0
+        self.n_heads = n_heads
+        self.head_dim = d // n_heads
+
+        self.q = nn.Linear(ca, d, bias=False)
+        self.k = nn.Linear(cb, d, bias=False)
+        self.v = nn.Linear(cb, d, bias=False)
+        self.proj = nn.Linear(d, ca, bias=False)
+
+    def forward(self, Fa, Fb, a_idx, b_idx):
+
+        Na = Fa.shape[0]
+        H = self.n_heads
+        d_H = self.head_dim
+
+        Q = self.q(Fa).reshape(Na, H, d_H)  # (Na, H, dh)
+        K = self.k(Fb).reshape(-1, H, d_H)  # (Nb, H, dh)
+        V = self.v(Fb).reshape(-1, H, d_H)  # (Nb, H, dh)
+
+        # out: (Na, H, dH)
+        out = scaled_dot_product_attention(Q, K, V, a_idx, b_idx, Na)
+        out = out.reshape(Na, H * d_H)
+
+        return Fa + self.proj(out)
+
+
+class NeighborhoodCrossAttention(MultiHeadAttention):
+
+    def __init__(self, ca, cb, d, n_heads=1, kernel_size=3):
+
+        super().__init__(ca, cb, d, n_heads)
+        self.kernel_gen = get_cube_kernel_generator(kernel_size)
+
+    def forward(self, A, B):
+
+        a_idx, b_idx = sparse_tensor_map(A, B, self.kernel_gen)
+        if a_idx.numel() == 0:
+            return A.F
+
+        return super().forward(A.F, B.F, a_idx, b_idx)
+
+
+class FullCrossAttention(MultiHeadAttention):
+
+    def forward(self, A, B):
+
+        Fa, Fb = A.F, B.F
+        Na, Nb = Fa.shape[0], Fb.shape[0]
+        dev = Fa.device
+
+        # [0, 0, ... 1, 1, .., Na-1, Na-1]
+        Q_idx = torch.arange(Na, device=dev).repeat_interleave(Nb)
+        # [0, 1, ..., Na-1, 0, 1, ...]
+        K_idx = torch.arange(Nb, device=dev).repeat(Na)
+
+        return super().forward(Fa, Fb, Q_idx, K_idx)

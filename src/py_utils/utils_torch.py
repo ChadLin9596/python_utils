@@ -500,3 +500,44 @@ def numpy_to_torch_wrapper(
         return wrapper
 
     return decorator
+
+
+def segmented_softmax(logits, groups, n_groups):
+    """
+    logits: (E,)
+    group:  (E,) int64, values in [0, n_group)
+    returns weights: (E,)
+    """
+
+    kwargs = {"device": logits.device, "dtype": logits.dtype}
+
+    # segmented max (|groups|,)
+    # [max(logits[groups==0]), max(logits[groups==1]), ...]
+    max_per_group = torch.full((n_groups,), -torch.inf, **kwargs)
+    max_per_group = torch.scatter_reduce(
+        input=max_per_group,
+        dim=0,
+        index=groups,
+        src=logits,
+        reduce="amax",
+        # for non-used group id -> -inf
+        include_self=True,
+    )
+
+    # prevent exp(logits) -> inf
+    logits = logits - max_per_group[groups]
+    exp_logits = torch.exp(logits)
+
+    # segmented sum
+    denominator = torch.zeros((n_groups,), **kwargs)
+    denominator = torch.scatter_reduce(
+        input=denominator,
+        dim=0,
+        index=groups,
+        src=exp_logits,
+        reduce="sum",
+        include_self=True,
+    )
+    denominator = denominator[groups] + 1e-12
+
+    return exp_logits / denominator
