@@ -273,7 +273,9 @@ def scaled_dot_product_attention(Q, K, V, Q_idx, K_idx, n_queries):
 class MultiHeadAttention(nn.Module):
 
     def __init__(self, ca: int, cb: int, d: int, n_heads=1):
+
         super().__init__()
+
         assert d % n_heads == 0
         self.n_heads = n_heads
         self.head_dim = d // n_heads
@@ -295,17 +297,32 @@ class MultiHeadAttention(nn.Module):
 
         # out: (Na, H, dH)
         out = scaled_dot_product_attention(Q, K, V, a_idx, b_idx, Na)
+
+        # concat
         out = out.reshape(Na, H * d_H)
 
-        return Fa + self.proj(out)
+        # linear
+        return self.proj(out)
 
 
-class NeighborhoodCrossAttention(MultiHeadAttention):
+class NeighborhoodCrossAttention(nn.Module):
 
-    def __init__(self, ca, cb, d, n_heads=1, kernel_size=3):
+    def __init__(self, ca, cb, d, n_heads=1, kernel_size=3, dropout_rate=0.1):
 
-        super().__init__(ca, cb, d, n_heads)
+        super().__init__()
+
+        self.mul_head_attn = MultiHeadAttention(ca, cb, d, n_heads=n_heads)
         self.kernel_gen = get_cube_kernel_generator(kernel_size)
+
+        self.layer_norm1 = nn.LayerNorm(ca)
+        self.layer_norm2 = nn.LayerNorm(ca)
+        self.dropout = nn.Dropout(dropout_rate)
+
+        self.feed_forward = nn.Sequential(
+            nn.Linear(ca, ca * 4),
+            nn.ReLU(),
+            nn.Linear(ca * 4, ca),
+        )
 
     def forward(self, A, B):
 
@@ -313,20 +330,16 @@ class NeighborhoodCrossAttention(MultiHeadAttention):
         if a_idx.numel() == 0:
             return A.F
 
-        return super().forward(A.F, B.F, a_idx, b_idx)
+        x = self.mul_head_attn(A.F, B.F, a_idx, b_idx)
 
+        # add & norm after mul-head-attn
+        x = self.dropout(x)
+        x = self.layer_norm1(x + A.F)
 
-class FullCrossAttention(MultiHeadAttention):
+        y = self.feed_forward(x)
 
-    def forward(self, A, B):
+        # add & norm after ffn
+        y = self.dropout(y)
+        y = self.layer_norm2(x + y)
 
-        Fa, Fb = A.F, B.F
-        Na, Nb = Fa.shape[0], Fb.shape[0]
-        dev = Fa.device
-
-        # [0, 0, ... 1, 1, .., Na-1, Na-1]
-        Q_idx = torch.arange(Na, device=dev).repeat_interleave(Nb)
-        # [0, 1, ..., Na-1, 0, 1, ...]
-        K_idx = torch.arange(Nb, device=dev).repeat(Na)
-
-        return super().forward(Fa, Fb, Q_idx, K_idx)
+        return y
