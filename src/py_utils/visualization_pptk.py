@@ -2,7 +2,6 @@ import pptk
 import scipy.interpolate
 import numpy as np
 
-
 ###########
 # Checker #
 ###########
@@ -324,13 +323,13 @@ def _process_pcds(*pcds, scale=[0, 100], color_map=None):
 ##############
 
 
-def plot_multiple_pcds(*pcds, scale=[0, 100], color_map=None):
+def plot_multiple_pcds(*pcds, scale=[0, 100], color_map=None, pptk_options={}):
     """
     TODO: add docstring
     """
 
     xyz, rgbas = _process_pcds(*pcds, scale=scale, color_map=color_map)
-    v = pptk.viewer(xyz, debug=False)
+    v = pptk.viewer(xyz, debug=False, **pptk_options)
     v.attributes(*rgbas)
 
     return v
@@ -410,7 +409,7 @@ def plot_matching_result(
 def estimate_viewer_params(extrinsic, intrinsic, H, W, distance=1.0):
 
     # TODO: radius is a little bit shorter based on visualization,
-    # need to check the reason. 
+    # need to check the reason.
 
     fx = float(intrinsic[0, 0])
     fy = float(intrinsic[1, 1])
