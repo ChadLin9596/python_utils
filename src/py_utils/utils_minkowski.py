@@ -343,3 +343,77 @@ class NeighborhoodCrossAttention(nn.Module):
         y = self.layer_norm2(x + y)
 
         return y
+
+
+########
+# Misc #
+########
+
+
+def torch_to_sparse_tensor(coord, feat, device, coordinate_manager):
+
+    D = coordinate_manager.D
+    shp = coord.shape
+
+    if len(shp) != 2:
+        raise ValueError
+
+    if shp[1] == D:
+        coord = ME.utils.batched_coordinates([coord], dtype=torch.int32)
+    elif shp[1] == (D + 1):
+        pass
+    else:
+        raise ValueError
+
+    feat = feat.to(torch.float32)
+
+    output = ME.SparseTensor(
+        features=feat,
+        coordinates=coord,
+        coordinate_manager=coordinate_manager,
+        device=device,
+    )
+
+    return output
+
+
+def numpy_to_sparse_tensor(coord, feat, device, coordinate_manager):
+
+    coord = torch.from_numpy(coord)
+    feat = torch.from_numpy(feat)
+    return torch_to_sparse_tensor(coord, feat, device, coordinate_manager)
+
+
+def unbatch_sparse_tensor(sparse_tensor, num_batch):
+
+    if sparse_tensor is None:
+        return [None] * num_batch
+
+    coords = sparse_tensor.C
+    feats = sparse_tensor.F
+    device = feats.device
+    tensor_stride = sparse_tensor.tensor_stride
+    coordinate_manager = sparse_tensor.coordinate_manager
+
+    results = []
+    for b in range(num_batch):
+
+        mask = coords[:, 0] == b
+        if not mask.any():
+            results.append(None)
+            continue
+
+        b_coords = coords[mask]
+        b_feats = feats[mask]
+
+        results.append(
+            ME.SparseTensor(
+                features=b_feats,
+                coordinates=b_coords,
+                tensor_stride=tensor_stride,
+                coordinate_manager=coordinate_manager,
+                device=device,
+            )
+        )
+
+    return results
