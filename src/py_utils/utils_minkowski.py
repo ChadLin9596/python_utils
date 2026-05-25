@@ -417,3 +417,20 @@ def unbatch_sparse_tensor(sparse_tensor, num_batch):
         )
 
     return results
+
+
+class SafeMinkowskiBatchNorm(ME.MinkowskiBatchNorm):
+
+    def forward(self, x):
+        if not self.training:
+            return super().forward(x)
+
+        num_voxels = x.F.shape[0]
+        if num_voxels > 1:
+            return super().forward(x)
+
+        # training mode and number of voxel is equal or less than 1
+        self.eval()
+        out = super().forward(x)
+        self.train()
+        return out
