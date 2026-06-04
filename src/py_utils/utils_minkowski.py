@@ -226,6 +226,65 @@ def append_unique_coords(A, B) -> ME.SparseTensor:
     return R
 
 
+########################
+# STATISTIC OPERATIONS #
+########################
+
+
+def sum(*sparse_tensors):
+
+    if len(sparse_tensors) == 0:
+        return None
+
+    summation = None
+    for st in sparse_tensors:
+        if st is None:
+            continue
+
+        # initialize summation
+        if summation is None:
+            summation = st
+            continue
+
+        # add
+        summation = ME.MinkowskiUnion()(summation, st)
+
+    return summation
+
+
+def count(*sparse_tensors):
+
+    if len(sparse_tensors) == 0:
+        return None
+
+    count = None
+    for st in sparse_tensors:
+        if st is None:
+            continue
+
+        cm = st.coordinate_manager
+        de = st.F.device
+        C = st.C
+        F = torch.ones(len(C), device=de)[:, None]
+        cnt = torch_to_sparse_tensor(C, F, de, cm)
+        # initialize summation
+        if count is None:
+            count = cnt
+            continue
+
+        # add
+        count = ME.MinkowskiUnion()(count, cnt)
+
+    return count
+
+
+def mean(*sparse_tensors):
+
+    summations = sum(*sparse_tensors)
+    counts = count(*sparse_tensors)
+    return summations / counts
+
+
 ###############
 # TRANSFORMER #
 ###############
@@ -417,6 +476,12 @@ def unbatch_sparse_tensor(sparse_tensor, num_batch):
         )
 
     return results
+
+
+def sparse_tensor_to_numpy(sparse_tensor):
+    C = sparse_tensor.C.cpu().numpy()
+    F = sparse_tensor.F.cpu().numpy()
+    return C, F
 
 
 class SafeMinkowskiBatchNorm(ME.MinkowskiBatchNorm):
