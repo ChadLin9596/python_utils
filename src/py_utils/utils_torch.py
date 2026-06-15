@@ -541,3 +541,14 @@ def segmented_softmax(logits, groups, n_groups):
     denominator = denominator[groups] + 1e-12
 
     return exp_logits / denominator
+
+
+def count_model_parameters(model, trainable_only=False):
+
+    num_params = []
+    for p in model.parameters():
+        if trainable_only and not p.requires_grad:
+            continue
+        num_params.append(p.numel())
+
+    return sum(num_params)
