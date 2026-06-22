@@ -116,7 +116,13 @@ def parse_header_by_file(f, return_size=False):
 
 
 def parse_binary_data(data, shape, dtype):
-    assert len(data) == dtype.itemsize * np.prod(shape)
+
+    _bytelength = len(data)
+    expect_bytelength = dtype.itemsize * np.prod(shape)
+    assert _bytelength >= expect_bytelength
+    if _bytelength != expect_bytelength:
+        print(f"cut {_bytelength} bytes to {expect_bytelength} bytes")
+        data = data[:expect_bytelength]
     return np.ndarray(shape, buffer=data, dtype=dtype)
 
 
