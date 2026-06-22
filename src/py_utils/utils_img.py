@@ -592,3 +592,20 @@ def update_intrinsics_by_center_crop(K, orig_shape, resized_shape):
     offset_x = orig_w // 2 - new_w // 2
 
     return update_intrinsics_by_crop(K, offset_y, offset_x)
+
+
+def retrieve_2D_info_from_3D_points(points, intrinsic, extrinsic, info_2D):
+
+    H, W = np.shape(info_2D)[:2]
+
+    FOV_M = is_points_in_FOV(points, intrinsic, extrinsic, H, W)
+    assert np.all(FOV_M)
+
+    _points = _trans_from_world_to_camera(points, extrinsic)
+
+    v, u, z = intrinsic @ _points.T
+    u = (u / z).astype(int)
+    v = (v / z).astype(int)
+
+    info = info_2D[u, v]
+    return info

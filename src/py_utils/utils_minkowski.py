@@ -479,6 +479,9 @@ def unbatch_sparse_tensor(sparse_tensor, num_batch):
 
 
 def sparse_tensor_to_numpy(sparse_tensor):
+    if sparse_tensor is None:
+        return None, None
+
     C = sparse_tensor.C.cpu().numpy()
     F = sparse_tensor.F.cpu().numpy()
     return C, F
