@@ -1,7 +1,10 @@
 import math
+
+import MinkowskiEngine as ME
+import numpy as np
 import torch
 import torch.nn as nn
-import MinkowskiEngine as ME
+
 from . import utils_torch
 
 ####################
@@ -75,7 +78,7 @@ def _sparse_tensor_key_map(
 
 
 @torch.no_grad()
-def sparse_tensor_map(
+def _sparse_tensor_map(
     A: ME.SparseTensor,
     B: ME.SparseTensor,
     kernel_generator=get_cube_kernel_generator(1),
@@ -103,8 +106,54 @@ def sparse_tensor_map(
     return _sparse_tensor_key_map(ak, bk, kg, cm, device=A.device)
 
 
+def sparse_tensor_map(A, B, kernel_generator=get_cube_kernel_generator(1)):
+
+    # return two torch long integeter arrays
+    if isinstance(A, ME.SparseTensor) and isinstance(B, ME.SparseTensor):
+        return _sparse_tensor_map(A, B, kernel_generator)
+
+    if isinstance(A, np.ndarray) and isinstance(B, np.ndarray):
+        assert (len(A.shape) == 2) and (A.shape[1] == 3)
+        assert (len(B.shape) == 2) and (B.shape[1] == 3)
+        _device = "cuda"
+        _coord_man = ME.CoordinateManager(D=3)
+
+        _func = numpy_to_sparse_tensor
+        _A = _func(A, np.ones((len(A), 1)), _device, _coord_man)
+        _B = _func(B, np.ones((len(B), 1)), _device, _coord_man)
+        A_keys, B_keys = _sparse_tensor_map(_A, _B, kernel_generator)
+        A_keys = A_keys.cpu().numpy()
+        B_keys = B_keys.cpu().numpy()
+
+        return A_keys, B_keys
+
+    if isinstance(A, torch.Tensor) and isinstance(B, torch.Tensor):
+        assert (len(A.shape) == 2) and (A.shape[1] == 3)
+        assert (len(B.shape) == 2) and (B.shape[1] == 3)
+        _device = "cuda"
+        _coord_man = ME.CoordinateManager(D=3)
+
+        _func = torch_to_sparse_tensor
+        _A = _func(A, torch.ones((len(A), 1)), _device, _coord_man)
+        _B = _func(B, torch.ones((len(B), 1)), _device, _coord_man)
+        A_keys, B_keys = _sparse_tensor_map(_A, _B, kernel_generator)
+
+        return A_keys, B_keys
+
+    msg = (
+        "A & B must be one of MinkowskiEngine.SparseTensor, "
+        "numpy array, or torch tensor pair"
+    )
+    raise ValueError(msg)
+
+
+################
+# INTERSECTION #
+################
+
+
 @torch.no_grad()
-def _A_occupied_by_B(
+def _A_key_occupied_by_B_key(
     A: ME.CoordinateMapKey,
     B: ME.CoordinateMapKey,
     coordinate_manager: ME.CoordinateManager,
@@ -124,7 +173,7 @@ def _A_occupied_by_B(
 
 
 @torch.no_grad()
-def A_occupied_by_B(
+def _A_occupied_by_B(
     A: ME.SparseTensor,
     B: ME.SparseTensor,
 ):
@@ -136,15 +185,30 @@ def A_occupied_by_B(
         raise ValueError("A and B must have the same tensor_stride.")
 
     mask = torch.zeros(len(A), dtype=torch.bool, device=A.device)
-    a_idx = _A_occupied_by_B(
-        A.coordinate_map_key,
-        B.coordinate_map_key,
-        A.coordinate_manager,
-        device=A.device,
-    )
+    a_idx, _ = sparse_tensor_map(A, B)
     mask[a_idx] = True
 
     return mask
+
+
+@torch.no_grad()
+def A_occupied_by_B(A, B):
+
+    if isinstance(A, ME.SparseTensor) and isinstance(B, ME.SparseTensor):
+        return _A_occupied_by_B(A, B)
+
+    if isinstance(A, np.ndarray) and isinstance(B, np.ndarray):
+        a_idx, _ = sparse_tensor_map(A, B)
+        mask = np.zeros(len(A), dtype=bool)
+        mask[a_idx] = True
+        return mask
+
+    if isinstance(A, torch.Tensor) and isinstance(B, torch.Tensor):
+        mask = torch.zeros(len(A), dtype=bool, device=A.device)
+        mask[a_idx] = True
+        return mask
+
+    raise ValueError
 
 
 @torch.no_grad()
@@ -170,7 +234,11 @@ def A_occupied_by_B_key(
 
 
 @torch.no_grad()
-def set_difference(A: ME.SparseTensor, B: ME.SparseTensor):
+def _set_difference(
+    A: ME.SparseTensor,
+    B: ME.SparseTensor,
+    return_indices=False,
+):
     """A - B"""
 
     assert A.tensor_stride == B.tensor_stride, "tensor_stride mismatch"
@@ -180,7 +248,9 @@ def set_difference(A: ME.SparseTensor, B: ME.SparseTensor):
         return A
 
     if torch.all(occupied):
-        return None  # A - B is empty; avoid constructing 0-voxel SparseTensor
+        # A - B is empty
+        # avoid constructing 0-voxel SparseTensor (will raise error)
+        return None
 
     keep = ~occupied
 
@@ -190,7 +260,32 @@ def set_difference(A: ME.SparseTensor, B: ME.SparseTensor):
         tensor_stride=A.tensor_stride,
         coordinate_manager=A.coordinate_manager,
     )
+    if return_indices:
+        return out, torch.nonzero(keep)[:, 0]
     return out
+
+
+@torch.no_grad()
+def set_difference(A, B, return_indices=False):
+
+    if isinstance(A, ME.SparseTensor) and isinstance(B, ME.SparseTensor):
+        return _set_difference(A, B, return_indices=return_indices)
+
+    if isinstance(A, np.ndarray) and isinstance(B, np.ndarray):
+        occupied = A_occupied_by_B(A, B)
+        keep = ~occupied
+        if return_indices:
+            return A[keep], np.nonzero(keep)[0]
+        return A[keep]
+
+    if isinstance(A, torch.Tensor) and isinstance(B, torch.Tensor):
+        occupied = A_occupied_by_B(A, B)
+        keep = ~occupied
+        if return_indices:
+            return A[keep], torch.nonzero(keep)[:, 0]
+        return A[keep]
+
+    raise ValueError
 
 
 @torch.no_grad()
