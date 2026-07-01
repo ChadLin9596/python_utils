@@ -297,6 +297,10 @@ def _process_pcds(*pcds, scale=[0, 100], color_map=None):
     attributes = []
 
     for p in pcds:
+
+        if isinstance(p, np.ndarray):
+            p = (p, np.ones((len(p), 3)))
+
         assert len(p) == 2
         assert len(p[0]) == len(p[1])
         xyzs.append(p[0])
