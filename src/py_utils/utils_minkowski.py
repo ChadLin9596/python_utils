@@ -481,8 +481,8 @@ class NeighborhoodCrossAttention(nn.Module):
     def forward(self, A, B):
 
         a_idx, b_idx = sparse_tensor_map(A, B, self.kernel_gen)
-        if a_idx.numel() == 0:
-            return A.F
+        # if a_idx.numel() == 0:
+        #     return A.F
 
         x = self.mul_head_attn(A.F, B.F, a_idx, b_idx)
 
