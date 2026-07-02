@@ -204,6 +204,7 @@ def A_occupied_by_B(A, B):
         return mask
 
     if isinstance(A, torch.Tensor) and isinstance(B, torch.Tensor):
+        a_idx, _ = sparse_tensor_map(A, B)
         mask = torch.zeros(len(A), dtype=bool, device=A.device)
         mask[a_idx] = True
         return mask
@@ -536,6 +537,15 @@ def numpy_to_sparse_tensor(coord, feat, device, coordinate_manager):
     coord = torch.from_numpy(coord)
     feat = torch.from_numpy(feat)
     return torch_to_sparse_tensor(coord, feat, device, coordinate_manager)
+
+
+def unbatched_coordinates_indices(coord, num_batch):
+
+    indices = []
+    for b in range(num_batch):
+        I = torch.nonzero(coord[:, 0] == b)[:, 0]
+        indices.append(I)
+    return indices
 
 
 def unbatch_sparse_tensor(sparse_tensor, num_batch):
