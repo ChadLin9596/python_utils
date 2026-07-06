@@ -115,6 +115,11 @@ def sparse_tensor_map(A, B, kernel_generator=get_cube_kernel_generator(1)):
     if isinstance(A, np.ndarray) and isinstance(B, np.ndarray):
         assert (len(A.shape) == 2) and (A.shape[1] == 3)
         assert (len(B.shape) == 2) and (B.shape[1] == 3)
+
+        if (len(A) == 0) or (len(B) == 0):
+            dtype = np.int32
+            return np.empty(0, dtype=dtype), np.empty(0, dtype=dtype)
+
         _device = "cuda"
         _coord_man = ME.CoordinateManager(D=3)
 
@@ -130,6 +135,11 @@ def sparse_tensor_map(A, B, kernel_generator=get_cube_kernel_generator(1)):
     if isinstance(A, torch.Tensor) and isinstance(B, torch.Tensor):
         assert (len(A.shape) == 2) and (A.shape[1] == 3)
         assert (len(B.shape) == 2) and (B.shape[1] == 3)
+
+        if (len(A) == 0) or (len(B) == 0):
+            dtype = torch.int32
+            return torch.empty(0, dtype=dtype), torch.empty(0, dtype=dtype)
+
         _device = "cuda"
         _coord_man = ME.CoordinateManager(D=3)
 
@@ -218,7 +228,7 @@ def A_occupied_by_B_key(
     B: ME.CoordinateMapKey,
 ):
     mask = torch.zeros(len(A), dtype=torch.bool, device=A.device)
-    a_idx = _A_occupied_by_B(
+    a_idx = _A_key_occupied_by_B_key(
         A.coordinate_map_key,
         B,
         A.coordinate_manager,
