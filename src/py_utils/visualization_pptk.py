@@ -190,6 +190,23 @@ def make_bounding_boxes_lines(vertices, eps=0.005):
     return points
 
 
+def make_meshes_lines(vertices, triangles, eps=0.005):
+
+    kwargs = {"start": False, "end": False, "eps": eps}
+
+    px0 = vertices[triangles[:, 0]]
+    px1 = vertices[triangles[:, 1]]
+    px2 = vertices[triangles[:, 2]]
+
+    points = [
+        make_lines(px0, px1, **kwargs),
+        make_lines(px1, px2, **kwargs),
+        make_lines(px2, px0, **kwargs),
+    ]
+    points = np.vstack(points)
+    return points
+
+
 def make_color(s_min, s_max, color_map=None):
     """
     TODO: add docstring
