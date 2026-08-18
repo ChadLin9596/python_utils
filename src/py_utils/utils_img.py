@@ -209,6 +209,11 @@ def is_camera_points_in_FOV(
     return mask
 
 
+############################
+# 3D POINTS TO IMAGE PLANE #
+############################
+
+
 def points_to_index_map(
     points,
     intrinsic,
@@ -374,6 +379,55 @@ def points_to_depth_image(
     if len(output) == 1:
         return output[0]
     return output
+
+
+#######################
+# POINT MAP TRANSFORM #
+#######################
+
+
+def point_map_to_ray_direction_map(point_map, extrinsic, invalid_value=np.nan):
+
+    H, W, _ = point_map.shape
+
+    M = np.all(np.isfinite(point_map), axis=-1)  # (H, W)
+    xyz = point_map[M]
+    xyz = _trans_from_world_to_camera(xyz, extrinsic)
+
+    ray_direction_map = np.full((H, W, 3), invalid_value)
+    ray_direction_map[M] = xyz / np.linalg.norm(xyz, axis=-1)[..., None]
+
+    return ray_direction_map
+
+
+def point_map_to_ray_distance_map(point_map, extrinsic, invalid_value=np.nan):
+
+    H, W, _ = point_map.shape
+
+    M = np.all(np.isfinite(point_map), axis=-1)  # (H, W)
+    xyz = point_map[M]
+    xyz = _trans_from_world_to_camera(xyz, extrinsic)
+
+    ray_distance_map = np.full((H, W), invalid_value)
+    ray_distance_map[M] = np.linalg.norm(xyz, axis=-1)
+    return ray_distance_map
+
+
+def point_map_to_depth_image(point_map, extrinsic, invalid_value=np.nan):
+    H, W, _ = point_map.shape
+
+    M = np.all(np.isfinite(point_map), axis=-1)  # (H, W)
+    xyz = point_map[M]
+    xyz = _trans_from_world_to_camera(xyz, extrinsic)
+
+    depth_image = np.full((H, W), invalid_value)
+    depth_image[M] = xyz[:, 2]
+    return depth_image
+
+
+###################
+# DEPTH TRANSFORM #
+###################
 
 
 def depth_image_to_points(
@@ -550,6 +604,11 @@ def fill_sparse_boolean_by_delaunay(sparse_mask, return_triangles=False):
     if return_triangles:
         return mask, tri.simplices
     return mask
+
+
+####################
+# INTRINSIC UPDATE #
+####################
 
 
 def update_intrinsics_by_resized(K, orig_shape, resized_shape):

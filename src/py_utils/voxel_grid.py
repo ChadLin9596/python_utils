@@ -186,7 +186,9 @@ def _subtract_voxel_indices(voxel_a, voxel_b):
 
     # Use view-based conversion for efficient comparison
     def to_unique_1d(array):
-        return array.view([("", array.dtype)] * array.shape[1]).ravel()
+        dtype = array.dtype
+        num_c = array.shape[1]
+        return array.view([("", dtype)] * num_c).ravel()
 
     a_voxel_keys = to_unique_1d(voxel_a)
     b_voxel_keys = to_unique_1d(voxel_b)

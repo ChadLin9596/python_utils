@@ -103,3 +103,52 @@ def umeyama_ransac_alignment(
         best_inliers = residuals < inlier_threshold
 
     return best_scale, best_R, best_t, best_inliers
+
+
+def fit_scale(src_vectors, dst_vectors):
+    s = np.sum(src_vectors * dst_vectors) / np.sum(src_vectors * src_vectors)
+    return s
+
+
+def ransac_fit_scale(
+    src_vectors,
+    dst_vectors,
+    max_iterations=1000,
+    inlier_threshold=0.05,
+    min_samples=4,
+    seed=None,
+):
+
+    rng = np.random.default_rng(seed)
+
+    n = len(src_vectors)
+    min_samples = min(n, min_samples)
+
+    best_scale = fit_scale(src_vectors, dst_vectors)
+    residuals = np.linalg.norm(dst_vectors - best_scale * src_vectors, axis=-1)
+    best_inliers = residuals < inlier_threshold
+
+    for _ in range(max_iterations):
+
+        idx = rng.choice(n, size=min_samples, replace=False)
+
+        scale = fit_scale(src_vectors[idx], dst_vectors[idx])
+        residuals = np.linalg.norm(dst_vectors - scale * src_vectors, axis=-1)
+        inliers = residuals < inlier_threshold
+
+        if np.sum(inliers) > np.sum(best_inliers):
+            best_inliers = inliers
+            best_scale = scale
+
+    # Refine on all inliers if we have enough
+    if best_inliers.sum() >= min_samples:
+
+        idx = best_inliers
+
+        scale = fit_scale(src_vectors[idx], dst_vectors[idx])
+        residuals = np.linalg.norm(dst_vectors - scale * src_vectors, axis=-1)
+
+        best_scale = scale
+        best_inliers = residuals < inlier_threshold
+
+    return best_scale, best_inliers
