@@ -318,7 +318,7 @@ def write(
 
         if face is not None:
             fd.write(b"element face %d\n" % len(face))
-            fd.write(b"property list uchar int vertex_index\n")
+            fd.write(b"property list uchar int vertex_indices\n")
 
         if edge is not None:
             fd.write(b"element edge %d\n" % len(edge))

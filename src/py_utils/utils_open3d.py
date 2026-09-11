@@ -6,6 +6,15 @@ import pptk.kdtree
 from . import utils_img
 
 
+def farthest_point_sampling(xyz, N):
+
+    o3d_pc = o3d.geometry.PointCloud()
+    o3d_pc.points = o3d.utility.Vector3dVector(xyz)  # d: double
+    o3d_pc = o3d_pc.farthest_point_down_sample(N)
+    xyz = np.asarray(o3d_pc.points)
+    return xyz
+
+
 def _estimate_normals_by_pca(xyz, k=-1, r=10):
     return pptk.estimate_normals(xyz, k=k, r=r)
 

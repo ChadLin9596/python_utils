@@ -112,6 +112,24 @@ def _trans_from_camera_to_world(points, extrinsic):
     return points
 
 
+def _trans_from_world_to_camera_on_point_map(point_map, extrinsic):
+
+    R = np.full_like(point_map, np.nan, point_map.dtype)
+    valid = np.all(np.isfinite(point_map), axis=-1)  # (H, W)
+
+    R[valid] = _trans_from_world_to_camera(point_map[valid], extrinsic)
+    return R
+
+
+def _trans_from_camera_to_world_on_point_map(point_map, extrinsic):
+
+    R = np.full_like(point_map, np.nan, point_map.dtype)
+    valid = np.all(np.isfinite(point_map), axis=-1)  # (H, W)
+
+    R[valid] = _trans_from_camera_to_world(point_map[valid], extrinsic)
+    return R
+
+
 def _indices_to_each_pixel(camera_points, intrinsic, H, W):
 
     x, y, z = intrinsic @ camera_points.T
