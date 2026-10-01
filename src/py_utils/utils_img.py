@@ -227,6 +227,15 @@ def is_camera_points_in_FOV(
     return mask
 
 
+def binary_dilation(input, iterations=1):
+
+    iterations = int(iterations)
+    if iterations < 1:
+        return input
+
+    return scipy.ndimage.binary_dilation(input, iterations=iterations)
+
+
 ############################
 # 3D POINTS TO IMAGE PLANE #
 ############################
