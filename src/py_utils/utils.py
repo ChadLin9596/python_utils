@@ -2,9 +2,11 @@ import datetime
 import os
 import sys
 
+import fpsample
 import numpy as np
 import requests
 import scipy.spatial.transform
+import sklearn.decomposition
 
 
 def is_connect_to_network(url="https://www.google.com", timeout=5):
@@ -500,3 +502,54 @@ def group_sizes_by_label(labels):
     count = count[J]
 
     return count
+
+
+def PCA(data, n_components=3, return_details=False):
+
+    _pca = sklearn.decomposition.PCA(n_components=n_components)
+    new_data = _pca.fit_transform(data)
+
+    if return_details:
+        return new_data, _pca
+    return new_data
+
+
+def _farthest_point_sampling(xyz, max_N):
+
+    N = len(xyz)
+    if N <= max_N:
+        return np.arange(N, dtype=np.int32)
+
+    max_N = min(N, max_N)
+
+    indices = np.full(max_N, -1, np.int32)
+    distances = np.full(N, np.inf, np.float64)
+
+    i = np.random.randint(low=0, high=N)
+    indices[0] = i
+
+    for j in range(1, max_N):
+
+        i = j - 1
+        ind_i = indices[i]
+        D = xyz[ind_i] - xyz
+        D = np.sum(D**2, axis=-1)
+        distances = np.minimum(distances, D)
+
+        ind_j = np.argmax(distances)
+        indices[j] = ind_j
+
+    return indices
+
+
+def farthest_point_sampling(xyz, max_N, seed=123):
+
+    N = len(xyz)
+    if N <= max_N:
+        return np.arange(N, dtype=np.int32)
+
+    max_N = min(N, max_N)
+
+    np.random.seed(seed)
+    indices = fpsample.bucket_fps_kdline_sampling(xyz, max_N, h=5)
+    return indices

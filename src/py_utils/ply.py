@@ -7,6 +7,7 @@ import numpy as np
 
 # Reference:
 # https://paulbourke.net/dataformats/ply/
+# https://github.com/nmwsharp/happly/issues/12  <- obj_info field
 
 STRUCTURE_TYPE = {
     "char": "b",
@@ -21,7 +22,7 @@ STRUCTURE_TYPE = {
 
 
 def _parse_header(fd, return_raw=False):
-    # Read header
+
     _header = []
     while True:
         line = fd.readline().decode("utf-8").strip()
@@ -53,6 +54,11 @@ def _parse_header(fd, return_raw=False):
             prefix = header.get("comment", "")
             prefix += "\n" if len(prefix) > 0 else ""
             header["comment"] = prefix + value
+
+        elif key == "obj_info":
+            prefix = header.get("obj_info", "")
+            prefix += "\n" if len(prefix) > 0 else ""
+            header["obj_info"] = prefix + value
 
         elif key == "element":
             if current_element is not None:
@@ -94,7 +100,7 @@ def _parse_header(fd, return_raw=False):
     return header
 
 
-def parse_header_by_file(f, return_size=False):
+def parse_header_by_file(f, return_size=False, return_raw=False):
     if not isinstance(f, str):
         raise TypeError("f should be a string.")
 
@@ -102,7 +108,7 @@ def parse_header_by_file(f, return_size=False):
         raise OSError("%s not found" % f)
 
     with open(f, "rb") as fd:
-        header = _parse_header(fd, return_raw=False)
+        header = _parse_header(fd, return_raw=return_raw)
         size = fd.tell()
 
     if return_size:
