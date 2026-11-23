@@ -8,6 +8,7 @@ Pillow
 requests
 scipy
 scikit-image
+scikit-learn
 
 # maintenance
 black
@@ -22,3 +23,6 @@ dill
 # deep learning
 torch
 torchvision
+
+fpsample
+pptk @ https://github.com/ChadLin9596/pptk/releases/download/v0.1.2/pptk-0.1.2-cp39-none-manylinux_2_35_x86_64.whl ; python_version == "3.9"
