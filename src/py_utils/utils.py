@@ -100,7 +100,9 @@ class ProgressTimer:
             msg = "\r" if self._in_notebook else "\033[1A\033[2K\r"
             self._xprint(msg)
 
-        percent = 100.0 * self.items / self.total_items
+        percent = 100.0
+        if self.total_items > 0:
+            percent = 100.0 * self.items / self.total_items
         percent = round(percent, 1)
         percent = min(max(percent, 0.0), 100.0)
 
@@ -119,6 +121,9 @@ class ProgressTimer:
         self._xprint(msg)
 
     def tic(self, total_items):
+
+        total_items = max(0, total_items)
+
         self.items = 0
         self.total_items = total_items
         self.start_time = datetime.datetime.now(datetime.timezone.utc)
